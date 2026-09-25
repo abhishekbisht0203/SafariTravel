@@ -1,0 +1,162 @@
+{
+	"key": "group_safari_site_settings",
+	"title": "Site Settings",
+	"fields": [
+		{
+			"key": "field_safari_phone",
+			"label": "Phone",
+			"name": "phone",
+			"type": "text",
+			"instructions": "Primary phone number displayed in header and footer.",
+			"required": 0,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "50",
+				"class": "",
+				"conditional_logic": []
+			},
+			"default_value": "",
+			"maxlength": "",
+			"placeholder": "",
+			"prepend": "",
+			"append": ""
+		},
+		{
+			"key": "field_safari_whatsapp",
+			"label": "WhatsApp",
+			"name": "whatsapp",
+			"type": "text",
+			"instructions": "Full number with country code, e.g. +254700000000.",
+			"required": 0,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "50",
+				"class": "",
+				"conditional_logic": []
+			},
+			"default_value": "",
+			"maxlength": "",
+			"placeholder": "",
+			"prepend": "",
+			"append": ""
+		},
+		{
+			"key": "field_safari_header_cta_text",
+			"label": "Header CTA Text",
+			"name": "header_cta_text",
+			"type": "text",
+			"instructions": "Label of the main call-to-action button in the header.",
+			"required": 0,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "50",
+				"class": "",
+				"conditional_logic": []
+			},
+			"default_value": "Plan My Safari",
+			"maxlength": "",
+			"placeholder": "",
+			"prepend": "",
+			"append": ""
+		},
+		{
+			"key": "field_safari_header_cta_url",
+			"label": "Header CTA URL",
+			"name": "header_cta_url",
+			"type": "text",
+			"instructions": "Destination of the header call-to-action button.",
+			"required": 0,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "50",
+				"class": "",
+				"conditional_logic": []
+			},
+			"default_value": "/plan-my-safari/",
+			"maxlength": "",
+			"placeholder": "",
+			"prepend": "",
+			"append": ""
+		},
+		{
+			"key": "field_safari_announcement_enabled",
+			"label": "Announcement Bar Enabled",
+			"name": "announcement_enabled",
+			"type": "true_false",
+			"instructions": "Show a dismissible announcement bar above the header.",
+			"required": 0,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "",
+				"class": "",
+				"conditional_logic": []
+			},
+			"message": "Show announcement bar",
+			"default_value": 0,
+			"ui": 1,
+			"ui_on_text": "On",
+			"ui_off_text": "Off"
+		},
+		{
+			"key": "field_safari_announcement_text",
+			"label": "Announcement Text",
+			"name": "announcement_text",
+			"type": "text",
+			"instructions": "Message shown in the announcement bar.",
+			"required": 0,
+			"conditional_logic": [
+				[
+					{
+						"field": "field_safari_announcement_enabled",
+						"operator": "==",
+						"value": "1"
+					}
+				]
+			],
+			"wrapper": {
+				"width": "",
+				"class": "",
+				"conditional_logic": []
+			},
+			"default_value": "",
+			"maxlength": "",
+			"placeholder": "",
+			"prepend": "",
+			"append": ""
+		},
+		{
+			"key": "field_safari_footer_note",
+			"label": "Footer Note",
+			"name": "footer_note",
+			"type": "textarea",
+			"instructions": "Short legal or trust note displayed in the footer.",
+			"required": 0,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "",
+				"class": "",
+				"conditional_logic": []
+			},
+			"default_value": "",
+			"maxlength": "",
+			"rows": 3,
+			"placeholder": "",
+			"new_lines": "wpautop"
+		}
+	],
+	"location": [
+		[
+			{
+				"param": "options_page",
+				"operator": "==",
+				"value": "safari-site-settings"
+			}
+		]
+	],
+	"menu_order": 0,
+	"position": "normal",
+	"style": "default",
+	"label_placement": "top",
+	"instruction_placement": "label",
+	"active": true
+}

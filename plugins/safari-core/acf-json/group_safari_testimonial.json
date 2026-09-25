@@ -1,0 +1,84 @@
+{
+	"key": "group_safari_testimonial",
+	"title": "Testimonial Details",
+	"fields": [
+		{
+			"key": "field_safari_person_name",
+			"label": "Person Name",
+			"name": "person_name",
+			"type": "text",
+			"instructions": "Name of the traveller giving the testimonial.",
+			"required": 1,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "50",
+				"class": "",
+				"conditional_logic": []
+			},
+			"default_value": "",
+			"maxlength": "",
+			"placeholder": "",
+			"prepend": "",
+			"append": ""
+		},
+		{
+			"key": "field_safari_role",
+			"label": "Role",
+			"name": "role",
+			"type": "text",
+			"instructions": "Extra context, e.g. \"Kenya, March 2025\".",
+			"required": 0,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "50",
+				"class": "",
+				"conditional_logic": []
+			},
+			"default_value": "",
+			"maxlength": "",
+			"placeholder": "",
+			"prepend": "",
+			"append": ""
+		},
+		{
+			"key": "field_safari_rating",
+			"label": "Rating",
+			"name": "rating",
+			"type": "radio",
+			"instructions": "Star rating shown next to the testimonial.",
+			"required": 0,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "",
+				"class": "",
+				"conditional_logic": []
+			},
+			"choices": {
+				"1": "1",
+				"2": "2",
+				"3": "3",
+				"4": "4",
+				"5": "5"
+			},
+			"default_value": "5",
+			"allow_null": 0,
+			"layout": "horizontal",
+			"return_format": "value"
+		}
+	],
+	"location": [
+		[
+			{
+				"param": "post_type",
+				"operator": "==",
+				"value": "testimonial"
+			}
+		]
+	],
+	"menu_order": 0,
+	"position": "normal",
+	"style": "default",
+	"label_placement": "top",
+	"instruction_placement": "label",
+	"active": true
+}

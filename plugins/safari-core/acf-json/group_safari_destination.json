@@ -1,0 +1,120 @@
+{
+	"key": "group_safari_destination",
+	"title": "Destination Details",
+	"fields": [
+		{
+			"key": "field_safari_country",
+			"label": "Country",
+			"name": "country",
+			"type": "text",
+			"instructions": "Primary country this destination belongs to.",
+			"required": 1,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "",
+				"class": "",
+				"conditional_logic": []
+			},
+			"default_value": "",
+			"maxlength": "",
+			"placeholder": "",
+			"prepend": "",
+			"append": ""
+		},
+		{
+			"key": "field_safari_best_months",
+			"label": "Best Months To Visit",
+			"name": "best_months",
+			"type": "checkbox",
+			"instructions": "Months when this destination is at its best.",
+			"required": 0,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "",
+				"class": "",
+				"conditional_logic": []
+			},
+			"choices": {
+				"jan": "January",
+				"feb": "February",
+				"mar": "March",
+				"apr": "April",
+				"may": "May",
+				"jun": "June",
+				"jul": "July",
+				"aug": "August",
+				"sep": "September",
+				"oct": "October",
+				"nov": "November",
+				"dec": "December"
+			},
+			"allow_custom": 0,
+			"default_value": [],
+			"layout": "vertical",
+			"toggle": 1,
+			"return_format": "value",
+			"save_custom": 0
+		},
+		{
+			"key": "field_safari_gallery",
+			"label": "Gallery",
+			"name": "gallery",
+			"type": "gallery",
+			"instructions": "Additional images shown on the destination page.",
+			"required": 0,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "",
+				"class": "",
+				"conditional_logic": []
+			},
+			"return_format": "array",
+			"library": "all",
+			"min": 0,
+			"max": 0,
+			"min_width": "",
+			"min_height": "",
+			"min_size": "",
+			"max_width": "",
+			"max_height": "",
+			"max_size": "",
+			"mime_types": "",
+			"insert": "append",
+			"preview_size": "medium"
+		},
+		{
+			"key": "field_safari_region_info",
+			"label": "Region Information",
+			"name": "region_info",
+			"type": "textarea",
+			"instructions": "Extra editorial copy about the wider region.",
+			"required": 0,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "",
+				"class": "",
+				"conditional_logic": []
+			},
+			"default_value": "",
+			"maxlength": "",
+			"rows": 6,
+			"placeholder": "",
+			"new_lines": "wpautop"
+		}
+	],
+	"location": [
+		[
+			{
+				"param": "post_type",
+				"operator": "==",
+				"value": "destination"
+			}
+		]
+	],
+	"menu_order": 0,
+	"position": "normal",
+	"style": "default",
+	"label_placement": "top",
+	"instruction_placement": "label",
+	"active": true
+}

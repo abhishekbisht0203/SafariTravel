@@ -1,0 +1,110 @@
+{
+	"key": "group_safari_event",
+	"title": "Event & Offer Details",
+	"fields": [
+		{
+			"key": "field_safari_start_date",
+			"label": "Start Date",
+			"name": "start_date",
+			"type": "date_picker",
+			"instructions": "First day of the event or offer.",
+			"required": 1,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "50",
+				"class": "",
+				"conditional_logic": []
+			},
+			"first_day": 1,
+			"display_format": "d/m/Y",
+			"return_format": "Y-m-d",
+			"placeholder": "",
+			"allow_null": 0
+		},
+		{
+			"key": "field_safari_end_date",
+			"label": "End Date",
+			"name": "end_date",
+			"type": "date_picker",
+			"instructions": "Last day of the event or offer.",
+			"required": 0,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "50",
+				"class": "",
+				"conditional_logic": []
+			},
+			"first_day": 1,
+			"display_format": "d/m/Y",
+			"return_format": "Y-m-d",
+			"placeholder": "",
+			"allow_null": 0
+		},
+		{
+			"key": "field_safari_promo_code",
+			"label": "Promo Code",
+			"name": "promo_code",
+			"type": "text",
+			"instructions": "Optional discount code shown to visitors.",
+			"required": 0,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "50",
+				"class": "",
+				"conditional_logic": []
+			},
+			"default_value": "",
+			"maxlength": "",
+			"placeholder": "",
+			"prepend": "",
+			"append": ""
+		},
+		{
+			"key": "field_safari_related_destination",
+			"label": "Related Destination",
+			"name": "related_destination",
+			"type": "relationship",
+			"instructions": "Destination this event or offer belongs to.",
+			"required": 0,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "50",
+				"class": "",
+				"conditional_logic": []
+			},
+			"post_type": [
+				"destination"
+			],
+			"taxonomy": [],
+			"filters": [
+				"search"
+			],
+			"elements": [
+				"featured_image"
+			],
+			"return_format": "id",
+			"min": 0,
+			"max": 1,
+			"search": "",
+			"layouts": [
+				"list",
+				"gallery"
+			]
+		}
+	],
+	"location": [
+		[
+			{
+				"param": "post_type",
+				"operator": "==",
+				"value": "event"
+			}
+		]
+	],
+	"menu_order": 0,
+	"position": "normal",
+	"style": "default",
+	"label_placement": "top",
+	"instruction_placement": "label",
+	"active": true
+}

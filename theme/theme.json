@@ -1,0 +1,216 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/theme.json",
+	"version": 3,
+	"settings": {
+		"appearanceTools": true,
+		"layout": {
+			"contentSize": "720px",
+			"wideSize": "1200px"
+		},
+		"color": {
+			"custom": true,
+			"customDuotone": false,
+			"customGradient": false,
+			"defaultDuotone": false,
+			"defaultGradients": false,
+			"defaultPalette": false,
+			"palette": [
+				{
+					"slug": "primary",
+					"color": "#1B5E43",
+					"name": "Primary"
+				},
+				{
+					"slug": "primary-dark",
+					"color": "#123F2D",
+					"name": "Primary Dark"
+				},
+				{
+					"slug": "accent",
+					"color": "#D4A017",
+					"name": "Accent"
+				},
+				{
+					"slug": "ink",
+					"color": "#1A1A1A",
+					"name": "Ink"
+				},
+				{
+					"slug": "ink-soft",
+					"color": "#4A4A4A",
+					"name": "Ink Soft"
+				},
+				{
+					"slug": "surface",
+					"color": "#FAFAF7",
+					"name": "Surface"
+				},
+				{
+					"slug": "surface-alt",
+					"color": "#F0EDE6",
+					"name": "Surface Alt"
+				},
+				{
+					"slug": "line",
+					"color": "#E2DED4",
+					"name": "Line"
+				},
+				{
+					"slug": "white",
+					"color": "#FFFFFF",
+					"name": "White"
+				]
+			]
+		},
+		"spacing": {
+			"customSpacingSize": true,
+			"spacingScale": {
+				"steps": 0
+			},
+			"spacingSizes": [
+				{
+					"slug": "20",
+					"size": "0.5rem",
+					"name": "2X-Small"
+				},
+				{
+					"slug": "30",
+					"size": "0.75rem",
+					"name": "X-Small"
+				},
+				{
+					"slug": "40",
+					"size": "1rem",
+					"name": "Small"
+				},
+				{
+					"slug": "50",
+					"size": "1.5rem",
+					"name": "Medium"
+				},
+				{
+					"slug": "60",
+					"size": "2rem",
+					"name": "Large"
+				},
+				{
+					"slug": "70",
+					"size": "3rem",
+					"name": "X-Large"
+				},
+				{
+					"slug": "80",
+					"size": "4rem",
+					"name": "2X-Large"
+				}
+			]
+		},
+		"typography": {
+			"customFontSize": true,
+			"fluid": true,
+			"fontFamilies": [
+				{
+					"slug": "body",
+					"name": "Body",
+					"fontFamily": "\"Inter\", system-ui, -apple-system, \"Segoe UI\", sans-serif"
+				},
+				{
+					"slug": "heading",
+					"name": "Heading",
+					"fontFamily": "\"Playfair Display\", Georgia, \"Times New Roman\", serif"
+				}
+			],
+			"fontSizes": [
+				{
+					"slug": "small",
+					"size": "0.875rem",
+					"name": "Small"
+				},
+				{
+					"slug": "medium",
+					"size": "1rem",
+					"name": "Medium"
+				},
+				{
+					"slug": "large",
+					"size": "1.25rem",
+					"name": "Large"
+				},
+				{
+					"slug": "x-large",
+					"size": "clamp(1.5rem, 1.2rem + 1.5vw, 2rem)",
+					"name": "Extra Large"
+				},
+				{
+					"slug": "xx-large",
+					"size": "clamp(2rem, 1.5rem + 2.5vw, 3rem)",
+					"name": "2X Large"
+				}
+			]
+		}
+	},
+	"styles": {
+		"color": {
+			"background": "var(--wp--preset--color--surface)",
+			"text": "var(--wp--preset--color--ink)"
+		},
+		"typography": {
+			"fontFamily": "var(--wp--preset--font-family--body)",
+			"fontSize": "var(--wp--preset--font-size--medium)",
+			"lineHeight": "1.6"
+		},
+		"spacing": {
+			"blockGap": "var(--wp--preset--spacing--50)"
+		},
+		"elements": {
+			"heading": {
+				"typography": {
+					"fontFamily": "var(--wp--preset--font-family--heading)",
+					"fontWeight": "700",
+					"lineHeight": "1.2"
+				},
+				"color": {
+					"text": "var(--wp--preset--color--ink)"
+				}
+			},
+			"link": {
+				"color": {
+					"text": "var(--wp--preset--color--primary)"
+				}
+			},
+			"button": {
+				"color": {
+					"background": "var(--wp--preset--color--primary)",
+					"text": "var(--wp--preset--color--white)"
+				},
+				"border": {
+					"radius": "6px"
+				}
+			}
+		}
+	},
+	"templateParts": [
+		{
+			"name": "header",
+			"title": "Header",
+			"area": "header"
+		},
+		{
+			"name": "footer",
+			"title": "Footer",
+			"area": "footer"
+		}
+	],
+	"customTemplates": [
+		{
+			"name": "page-full-width",
+			"title": "Full width",
+			"postTypes": ["page"]
+		},
+		{
+			"name": "page-no-title",
+			"title": "No title",
+			"postTypes": ["page"]
+		}
+	]
+}

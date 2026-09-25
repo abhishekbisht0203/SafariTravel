@@ -1,0 +1,358 @@
+{
+	"key": "group_safari_tour",
+	"title": "Tour Details",
+	"fields": [
+		{
+			"key": "field_safari_destination",
+			"label": "Destination",
+			"name": "destination",
+			"type": "relationship",
+			"instructions": "Destination this tour belongs to.",
+			"required": 1,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "",
+				"class": "",
+				"conditional_logic": []
+			},
+			"post_type": [
+				"destination"
+			],
+			"taxonomy": [],
+			"filters": [
+				"search"
+			],
+			"elements": [
+				"featured_image"
+			],
+			"return_format": "id",
+			"min": 0,
+			"max": 1,
+			"search": "",
+			"layouts": [
+				"list",
+				"gallery"
+			]
+		},
+		{
+			"key": "field_safari_duration_days",
+			"label": "Duration (Days)",
+			"name": "duration_days",
+			"type": "number",
+			"instructions": "Total number of days.",
+			"required": 1,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "50",
+				"class": "",
+				"conditional_logic": []
+			},
+			"default_value": "",
+			"min": 1,
+			"max": "",
+			"step": 1,
+			"placeholder": "",
+			"prepend": "",
+			"append": "days"
+		},
+		{
+			"key": "field_safari_price_from",
+			"label": "Price From",
+			"name": "price_from",
+			"type": "number",
+			"instructions": "Starting price per person.",
+			"required": 1,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "50",
+				"class": "",
+				"conditional_logic": []
+			},
+			"default_value": "",
+			"min": 0,
+			"max": "",
+			"step": 0.01,
+			"placeholder": "",
+			"prepend": "",
+			"append": ""
+		},
+		{
+			"key": "field_safari_currency",
+			"label": "Currency",
+			"name": "currency",
+			"type": "select",
+			"instructions": "Currency of the price shown above.",
+			"required": 1,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "50",
+				"class": "",
+				"conditional_logic": []
+			},
+			"choices": {
+				"USD": "USD",
+				"EUR": "EUR",
+				"GBP": "GBP",
+				"ZAR": "ZAR",
+				"KES": "KES"
+			},
+			"default_value": "USD",
+			"allow_null": 0,
+			"multiple": 0,
+			"ui": 0,
+			"return_format": "value",
+			"ajax": 0,
+			"placeholder": ""
+		},
+		{
+			"key": "field_safari_group_size",
+			"label": "Max Group Size",
+			"name": "group_size",
+			"type": "number",
+			"instructions": "Maximum number of travellers per departure.",
+			"required": 0,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "50",
+				"class": "",
+				"conditional_logic": []
+			},
+			"default_value": "",
+			"min": 1,
+			"max": "",
+			"step": 1,
+			"placeholder": "",
+			"prepend": "",
+			"append": "guests"
+		},
+		{
+			"key": "field_safari_difficulty",
+			"label": "Difficulty",
+			"name": "difficulty",
+			"type": "select",
+			"instructions": "Physical effort required for this tour.",
+			"required": 0,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "50",
+				"class": "",
+				"conditional_logic": []
+			},
+			"choices": {
+				"easy": "Easy",
+				"moderate": "Moderate",
+				"challenging": "Challenging",
+				"strenuous": "Strenuous"
+			},
+			"default_value": "",
+			"allow_null": 1,
+			"multiple": 0,
+			"ui": 0,
+			"return_format": "value",
+			"ajax": 0,
+			"placeholder": "Select"
+		},
+		{
+			"key": "field_safari_itinerary",
+			"label": "Itinerary",
+			"name": "itinerary",
+			"type": "repeater",
+			"instructions": "Day-by-day plan for this tour.",
+			"required": 0,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "",
+				"class": "",
+				"conditional_logic": []
+			},
+			"layout": "block",
+			"button_label": "Add Day",
+			"collapsed": "field_safari_day_title",
+			"min": 0,
+			"max": 0,
+			"pagination": 0,
+			"min_rows": 0,
+			"max_rows": 0,
+			"rows_per_page": 20
+		},
+		{
+			"key": "field_safari_day_title",
+			"label": "Day Title",
+			"name": "day_title",
+			"type": "text",
+			"instructions": "",
+			"required": 1,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "",
+				"class": "",
+				"conditional_logic": []
+			},
+			"default_value": "",
+			"maxlength": "",
+			"placeholder": "",
+			"prepend": "",
+			"append": ""
+		},
+		{
+			"key": "field_safari_day_description",
+			"label": "Day Description",
+			"name": "day_description",
+			"type": "textarea",
+			"instructions": "",
+			"required": 0,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "",
+				"class": "",
+				"conditional_logic": []
+			},
+			"default_value": "",
+			"maxlength": "",
+			"rows": 4,
+			"placeholder": "",
+			"new_lines": "wpautop"
+		},
+		{
+			"key": "field_safari_inclusions",
+			"label": "Inclusions",
+			"name": "inclusions",
+			"type": "repeater",
+			"instructions": "What is included in the price.",
+			"required": 0,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "",
+				"class": "",
+				"conditional_logic": []
+			},
+			"layout": "table",
+			"button_label": "Add Inclusion",
+			"collapsed": "",
+			"min": 0,
+			"max": 0,
+			"pagination": 0,
+			"min_rows": 0,
+			"max_rows": 0,
+			"rows_per_page": 20
+		},
+		{
+			"key": "field_safari_inclusion_item",
+			"label": "Item",
+			"name": "item",
+			"type": "text",
+			"instructions": "",
+			"required": 1,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "",
+				"class": "",
+				"conditional_logic": []
+			},
+			"default_value": "",
+			"maxlength": "",
+			"placeholder": "",
+			"prepend": "",
+			"append": ""
+		},
+		{
+			"key": "field_safari_exclusions",
+			"label": "Exclusions",
+			"name": "exclusions",
+			"type": "repeater",
+			"instructions": "What is not included in the price.",
+			"required": 0,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "",
+				"class": "",
+				"conditional_logic": []
+			},
+			"layout": "table",
+			"button_label": "Add Exclusion",
+			"collapsed": "",
+			"min": 0,
+			"max": 0,
+			"pagination": 0,
+			"min_rows": 0,
+			"max_rows": 0,
+			"rows_per_page": 20
+		},
+		{
+			"key": "field_safari_exclusion_item",
+			"label": "Item",
+			"name": "item",
+			"type": "text",
+			"instructions": "",
+			"required": 1,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "",
+				"class": "",
+				"conditional_logic": []
+			},
+			"default_value": "",
+			"maxlength": "",
+			"placeholder": "",
+			"prepend": "",
+			"append": ""
+		},
+		{
+			"key": "field_safari_departures",
+			"label": "Departure Dates",
+			"name": "departures",
+			"type": "repeater",
+			"instructions": "Fixed departure dates for this tour.",
+			"required": 0,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "",
+				"class": "",
+				"conditional_logic": []
+			},
+			"layout": "table",
+			"button_label": "Add Departure",
+			"collapsed": "",
+			"min": 0,
+			"max": 0,
+			"pagination": 0,
+			"min_rows": 0,
+			"max_rows": 0,
+			"rows_per_page": 20
+		},
+		{
+			"key": "field_safari_departure_date",
+			"label": "Departure Date",
+			"name": "departure_date",
+			"type": "date_picker",
+			"instructions": "",
+			"required": 1,
+			"conditional_logic": [],
+			"wrapper": {
+				"width": "",
+				"class": "",
+				"conditional_logic": []
+			},
+			"first_day": 1,
+			"display_format": "d/m/Y",
+			"return_format": "Y-m-d",
+			"placeholder": "",
+			"allow_null": 0
+		}
+	],
+	"location": [
+		[
+			{
+				"param": "post_type",
+				"operator": "==",
+				"value": "tour"
+			}
+		]
+	],
+	"menu_order": 0,
+	"position": "normal",
+	"style": "default",
+	"label_placement": "top",
+	"instruction_placement": "label",
+	"active": true
+}
