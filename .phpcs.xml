@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<ruleset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         name="Safari Travel"
+         xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/squizlabs/PHP_CodeSniffer/master/phpcs.xsd">
+
+    <description>PHPCS + WPCS rules for Safari Travel custom code.</description>
+
+    <!-- Scan these paths -->
+    <file>plugins/safari-core</file>
+    <file>plugins/safari-leads</file>
+    <file>plugins/safari-search</file>
+    <file>mu-plugins</file>
+    <file>theme</file>
+
+    <!-- Exclude generated / vendor paths -->
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/node_modules/*</exclude-pattern>
+    <exclude-pattern>*/assets/dist/*</exclude-pattern>
+    <exclude-pattern>*/acf-json/*</exclude-pattern>
+
+    <!-- WordPress Coding Standards -->
+    <rule ref="WordPress">
+        <!-- Allow short array syntax -->
+        <exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
+        <!-- PSR-4 autoloading means class file names won't always match WP convention -->
+        <exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
+        <exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
+    </rule>
+
+    <!-- Minimum WP version for deprecated function checks -->
+    <rule ref="WordPress.WP.DeprecatedFunctions">
+        <properties>
+            <property name="minimum_supported_version" value="6.4"/>
+        </properties>
+    </rule>
+
+    <!-- PHP version target -->
+    <config name="testVersion" value="8.2-"/>
+
+    <!-- Text domains -->
+    <rule ref="WordPress.WP.I18n">
+        <properties>
+            <property name="text_domain" type="array" value="safari-core,safari-leads,safari-search,safari-travel"/>
+        </properties>
+    </rule>
+
+    <!-- Tab indentation (WP style) -->
+    <rule ref="Generic.WhiteSpace.DisallowSpaceIndent"/>
+    <rule ref="Generic.WhiteSpace.ScopeIndent">
+        <properties>
+            <property name="indent" value="4"/>
+            <property name="tabIndent" value="true"/>
+        </properties>
+    </rule>
+
+</ruleset>

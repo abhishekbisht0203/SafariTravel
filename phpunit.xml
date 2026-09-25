@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+    bootstrap="tests/bootstrap.php"
+    cacheDirectory=".phpunit.cache"
+    executionOrder="depends,random"
+    beStrictAboutCoverageMetadata="true"
+    requireCoverageMetadata="false"
+    beStrictAboutChangesToGlobalState="false"
+    colors="true"
+>
+    <testSuites>
+        <testsuite name="Safari Leads">
+            <directory>tests/safari-leads</directory>
+        </testsuite>
+        <testsuite name="Safari Core">
+            <directory>tests/safari-core</directory>
+        </testsuite>
+        <testsuite name="Safari Search">
+            <directory>tests/safari-search</directory>
+        </testsuite>
+    </testSuites>
+
+    <source>
+        <include>
+            <directory suffix=".php">plugins/safari-core</directory>
+            <directory suffix=".php">plugins/safari-leads</directory>
+            <directory suffix=".php">plugins/safari-search</directory>
+        </include>
+        <exclude>
+            <directory>plugins/safari-core/vendor</directory>
+            <directory>plugins/safari-leads/vendor</directory>
+        </exclude>
+    </source>
+</phpunit>

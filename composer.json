@@ -1,0 +1,39 @@
+{
+  "name": "safari-travel",
+  "description": "Composer-managed PHP dependencies and autoloading for Safari Travel custom plugins.",
+  "type": "project",
+  "require": {
+    "php": "^8.2"
+  },
+  "require-dev": {
+    "squizlabs/php_codesniffer": "^3.9",
+    "wp-coding-standards/wpcs": "^3.1",
+    "phpcompatibility/phpcompatibility-wp": "^2.1",
+    "phpunit/phpunit": "^10.5",
+    "yoast/phpunit-polyfills": "^3.0",
+    "brain/monkey": "^2.6",
+    "mockery/mockery": "^1.6"
+  },
+  "autoload": {
+    "psr-4": {}
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Safari\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "phpcs": "phpcs --standard=.phpcs.xml",
+    "phpcbf": "phpcbf --standard=.phpcs.xml",
+    "test": "phpunit --config phpunit.xml",
+    "lint": "@phpcs"
+  },
+  "config": {
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
+  },
+  "extra": {
+    "phpcodesniffer-search-depth": 5
+  }
+}
