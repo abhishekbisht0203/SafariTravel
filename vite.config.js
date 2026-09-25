@@ -1,20 +1,19 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
-import { writeFileSync } from 'fs';
+import { writeFileSync, unlinkSync } from 'fs';
 
 export default defineConfig(({ command }) => ({
-  root: resolve(__dirname, 'theme/src'),
+  root: resolve(__dirname, 'theme/assets'),
   base: '/wp-content/themes/safari-theme/assets/dist/',
 
   build: {
     outDir: resolve(__dirname, 'theme/assets/dist'),
     emptyOutDir: true,
-    manifest: true,
+    manifest: 'manifest.json',
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'theme/src/main.js'),
-        // Homepage-only GSAP bundle — loaded conditionally
-        home: resolve(__dirname, 'theme/src/home.js'),
+        main: resolve(__dirname, 'theme/assets/src/main.js'),
+        home: resolve(__dirname, 'theme/assets/src/home.js'),
       },
       output: {
         // Hashed filenames for cache busting
@@ -47,7 +46,6 @@ export default defineConfig(({ command }) => ({
       },
       closeBundle() {
         try {
-          const { unlinkSync } = require('fs');
           unlinkSync(resolve(__dirname, 'theme/.vite-dev'));
         } catch {}
       },

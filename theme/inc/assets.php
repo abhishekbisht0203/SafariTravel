@@ -31,13 +31,21 @@ add_action('wp_enqueue_scripts', static function (): void {
         // Vite dev client + entry (HMR).
         wp_enqueue_script('safari-vite-client', $dev . '/@vite/client', [], null, true);
         wp_enqueue_script('safari-main', $dev . '/src/main.js', ['safari-vite-client'], null, true);
+
+        if (is_front_page() || is_home()) {
+            wp_enqueue_script('safari-home', $dev . '/src/home.js', ['safari-main'], null, true);
+        }
+
         wp_add_inline_style('global', ':root{}');
         return;
     }
 
     $manifest_path = SAFARI_THEME_DIR . '/assets/dist/manifest.json';
     if (! file_exists($manifest_path)) {
-        return;
+        $manifest_path = SAFARI_THEME_DIR . '/assets/dist/.vite/manifest.json';
+        if (! file_exists($manifest_path)) {
+            return;
+        }
     }
 
     $manifest = json_decode((string) file_get_contents($manifest_path), true);
@@ -45,7 +53,7 @@ add_action('wp_enqueue_scripts', static function (): void {
         return;
     }
 
-    $css = $manifest['src/main.css']['file'] ?? null;
+    $css = $manifest['style.css']['file'] ?? $manifest['src/main.css']['file'] ?? $manifest['src/main.js']['css'][0] ?? null;
     $js  = $manifest['src/main.js']['file'] ?? null;
 
     if ($css) {
@@ -65,6 +73,30 @@ add_action('wp_enqueue_scripts', static function (): void {
             SAFARI_THEME_VERSION,
             ['in_footer' => true, 'strategy' => 'defer']
         );
+    }
+
+    if (is_front_page() || is_home()) {
+        $home_js  = $manifest['src/home.js']['file'] ?? null;
+        $home_css = $manifest['src/home.js']['css'][0] ?? null;
+
+        if ($home_css) {
+            wp_enqueue_style(
+                'safari-home',
+                SAFARI_THEME_URI . '/assets/dist/' . $home_css,
+                ['safari-main'],
+                SAFARI_THEME_VERSION
+            );
+        }
+
+        if ($home_js) {
+            wp_enqueue_script(
+                'safari-home',
+                SAFARI_THEME_URI . '/assets/dist/' . $home_js,
+                ['safari-main'],
+                SAFARI_THEME_VERSION,
+                ['in_footer' => true, 'strategy' => 'defer']
+            );
+        }
     }
 }, 20);
 

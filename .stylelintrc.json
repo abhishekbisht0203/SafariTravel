@@ -2,13 +2,14 @@
   "extends": ["stylelint-config-standard"],
   "rules": {
     "selector-class-pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*(__[a-z0-9]+(-[a-z0-9]+)*)?(--[a-z0-9]+(-[a-z0-9]+)*)?$",
-    "custom-property-pattern": "^([a-z][a-z0-9]*)(-[a-z0-9]+)*$",
+    "custom-property-pattern": "^([a-z][a-z0-9]*)(--?[a-z0-9]+)*$",
     "color-named": "never",
     "declaration-no-important": [true, { "severity": "warning" }],
     "font-family-no-missing-generic-family-keyword": true,
     "no-descending-specificity": null,
     "alpha-value-notation": "number",
-    "color-function-notation": "modern"
+    "color-function-notation": "modern",
+    "media-feature-range-notation": "prefix"
   },
   "ignoreFiles": ["theme/assets/dist/**", "node_modules/**"]
 }

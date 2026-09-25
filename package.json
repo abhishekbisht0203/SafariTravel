@@ -1,13 +1,14 @@
 {
   "name": "safari-travel-theme",
   "private": true,
+  "type": "module",
   "description": "Asset build pipeline for Safari Travel WordPress theme",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint:js": "eslint src --ext .js",
-    "lint:css": "stylelint src/**/*.css src/**/*.scss",
+    "lint:js": "eslint theme/assets/src",
+    "lint:css": "stylelint theme/assets/src/**/*.css",
     "lint": "npm run lint:js && npm run lint:css"
   },
   "dependencies": {
