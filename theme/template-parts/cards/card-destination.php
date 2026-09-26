@@ -20,7 +20,11 @@ if (! defined('ABSPATH')) {
  * @var bool       $eager     Load the image eagerly.
  */
 
-$safari_id       = is_object($post) ? (int) $post->ID : (int) $post;
+$safari_id = safari_card_post_id($args);
+
+if ($safari_id <= 0) {
+    return;
+}
 $safari_country  = safari_destination_country($safari_id);
 $safari_terms    = get_the_terms($safari_id, 'safari_type');
 $safari_type     = (is_array($safari_terms) && $safari_terms) ? $safari_terms[0]->name : '';

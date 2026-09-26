@@ -103,8 +103,7 @@ while (have_posts()) :
                     <div class="grid grid--3" data-reveal-group>
                         <?php foreach ($safari_related->posts as $safari_rel) : ?>
                             <?php
-                            set_query_var('post', $safari_rel);
-                            get_template_part('template-parts/cards/card-guide');
+                            get_template_part('template-parts/cards/card-guide', null, ['post_id' => $safari_rel]);
                             ?>
                         <?php endforeach; ?>
                     </div>

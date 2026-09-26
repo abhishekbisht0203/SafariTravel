@@ -16,7 +16,11 @@ if (! defined('ABSPATH')) {
  * @var bool       $dark Render for a dark surface.
  */
 
-$safari_id     = is_object($post) ? (int) $post->ID : (int) $post;
+$safari_id = safari_card_post_id($args);
+
+if ($safari_id <= 0) {
+    return;
+}
 $safari_name   = (string) (safari_field('person_name', $safari_id, '') ?: get_the_title($safari_id));
 $safari_role   = (string) safari_field('role', $safari_id, '');
 $safari_rating = (int) safari_field('rating', $safari_id, 5);

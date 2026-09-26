@@ -97,8 +97,9 @@ $safari_past     = $safari_partition('past', $safari_page);
 			<div class="grid grid--2" data-reveal-group>
 				<?php foreach ($safari_upcoming as $safari_event) : ?>
 					<?php
-                    set_query_var('post', $safari_event);
-                    get_template_part('template-parts/cards/card-event');
+                    get_template_part('template-parts/cards/card-event', null, [
+					'post_id' => $safari_event,
+				]);
                     ?>
 				<?php endforeach; ?>
 			</div>
@@ -115,8 +116,9 @@ $safari_past     = $safari_partition('past', $safari_page);
 			<div class="grid grid--2">
 				<?php foreach ($safari_past as $safari_event) : ?>
 					<?php
-                    set_query_var('post', $safari_event);
-                    get_template_part('template-parts/cards/card-event');
+                    get_template_part('template-parts/cards/card-event', null, [
+					'post_id' => $safari_event,
+				]);
                     ?>
 				<?php endforeach; ?>
 			</div>

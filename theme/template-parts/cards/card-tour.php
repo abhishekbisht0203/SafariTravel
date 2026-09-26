@@ -20,7 +20,11 @@ if (! defined('ABSPATH')) {
  * @var bool       $compact Omit the description block.
  */
 
-$safari_id        = is_object($post) ? (int) $post->ID : (int) $post;
+$safari_id = safari_card_post_id($args);
+
+if ($safari_id <= 0) {
+    return;
+}
 $safari_days      = (int) safari_field('duration_days', $safari_id, 0);
 $safari_price     = safari_field('price_from', $safari_id, 0);
 $safari_currency  = (string) (safari_field('currency', $safari_id, 'USD') ?: 'USD');

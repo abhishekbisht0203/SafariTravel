@@ -130,9 +130,9 @@ $safari_types = [
                     <div class="grid grid--4" data-reveal-group>
                         <?php foreach ($safari_popular as $safari_dest) : ?>
                             <?php
-                            set_query_var('post', $safari_dest);
                             get_template_part('template-parts/cards/card-destination', null, [
-                                'variant' => 'grid',
+                                'post_id' => $safari_dest,
+							'variant' => 'grid',
                             ]);
                             ?>
                         <?php endforeach; ?>

@@ -184,12 +184,12 @@ $safari_quote_ids = get_posts([
 						<?php foreach ($safari_dest_ids as $safari_i => $safari_dest_id) : ?>
 							<li>
 								<?php
-                                set_query_var('post', $safari_dest_id);
                                 get_template_part(
                                     'template-parts/cards/card-destination',
                                     null,
                                     [
-                                        'variant' => 'row',
+                                        'post_id' => $safari_dest_id,
+						'variant' => 'row',
                                         'index'   => str_pad((string) ($safari_i + 1), 2, '0', STR_PAD_LEFT),
                                     ]
                                 );
@@ -220,9 +220,9 @@ $safari_quote_ids = get_posts([
 			<div class="tour-rail" data-rail data-reveal-group>
 				<?php foreach (array_values($safari_tour_ids) as $safari_i => $safari_tour_id) : ?>
 					<?php
-                    set_query_var('post', $safari_tour_id);
                     get_template_part('template-parts/cards/card-tour', null, [
-                        'eager'   => (0 === $safari_i),
+                        'post_id' => $safari_tour_id,
+					'eager'   => (0 === $safari_i),
                         'compact' => true,
                     ]);
 					?>
@@ -354,8 +354,7 @@ $safari_quote_ids = get_posts([
 			<div class="grid" data-reveal-group>
 				<?php foreach ($safari_event_ids as $safari_event_id) : ?>
 					<?php
-                    set_query_var('post', $safari_event_id);
-                    get_template_part('template-parts/cards/card-event');
+                    get_template_part('template-parts/cards/card-event', null, ['post_id' => $safari_event_id]);
                     ?>
 				<?php endforeach; ?>
 			</div>
@@ -378,8 +377,10 @@ $safari_quote_ids = get_posts([
 			<div class="grid grid--3" data-reveal-group>
 				<?php foreach ($safari_quote_ids as $safari_quote_id) : ?>
 					<?php
-                    set_query_var('post', $safari_quote_id);
-                    get_template_part('template-parts/cards/card-testimonial', null, ['dark' => true]);
+                    get_template_part('template-parts/cards/card-testimonial', null, [
+					'post_id' => $safari_quote_id,
+					'dark'   => true,
+				]);
                     ?>
 				<?php endforeach; ?>
 			</div>
@@ -403,8 +404,7 @@ $safari_quote_ids = get_posts([
 			<div class="grid grid--3" data-reveal-group>
 				<?php foreach ($safari_guide_ids as $safari_guide_id) : ?>
 					<?php
-                    set_query_var('post', $safari_guide_id);
-                    get_template_part('template-parts/cards/card-guide');
+                    get_template_part('template-parts/cards/card-guide', null, ['post_id' => $safari_guide_id]);
                     ?>
 				<?php endforeach; ?>
 			</div>

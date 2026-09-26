@@ -20,7 +20,11 @@ if (! defined('ABSPATH')) {
  * @var bool       $dark  Render for a dark surface.
  */
 
-$safari_id   = is_object($post) ? (int) $post->ID : (int) $post;
+$safari_id = safari_card_post_id($args);
+
+if ($safari_id <= 0) {
+    return;
+}
 $safari_start = (string) safari_field('start_date', $safari_id, '');
 $safari_end   = (string) safari_field('end_date', $safari_id, '');
 $safari_code  = (string) safari_field('promo_code', $safari_id, '');

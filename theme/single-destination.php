@@ -214,8 +214,10 @@ while (have_posts()) :
                     <div class="tour-rail" data-rail data-reveal-group>
                         <?php foreach ($safari_tours->posts as $safari_tour) : ?>
                             <?php
-                            set_query_var('post', $safari_tour);
-                            get_template_part('template-parts/cards/card-tour', null, ['compact' => true]);
+                            get_template_part('template-parts/cards/card-tour', null, [
+					'post_id'  => $safari_tour,
+					'compact' => true,
+				]);
                             ?>
                         <?php endforeach; ?>
                     </div>

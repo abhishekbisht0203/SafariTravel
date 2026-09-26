@@ -63,8 +63,9 @@ $safari_popular = get_posts([
                 <div class="grid grid--4" data-reveal-group>
                     <?php foreach ($safari_popular as $safari_dest) : ?>
                         <?php
-                        set_query_var('post', $safari_dest);
-                        get_template_part('template-parts/cards/card-destination');
+                        get_template_part('template-parts/cards/card-destination', null, [
+				'post_id' => $safari_dest,
+				]);
                         ?>
                     <?php endforeach; ?>
                 </div>

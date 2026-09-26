@@ -16,7 +16,11 @@ if (! defined('ABSPATH')) {
  * @var bool       $thumb Show a thumbnail.
  */
 
-$safari_id    = is_object($post) ? (int) $post->ID : (int) $post;
+$safari_id = safari_card_post_id($args);
+
+if ($safari_id <= 0) {
+    return;
+}
 $safari_thumb = ! isset($args['thumb']) || ! empty($args['thumb']);
 $safari_read  = safari_reading_time($safari_id);
 $safari_topics = get_the_terms($safari_id, 'guide_topic');

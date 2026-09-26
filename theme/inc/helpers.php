@@ -356,6 +356,52 @@ function safari_month_levels(array $best): array
  * ========================================================================== */
 
 /**
+ * Resolve the post a card template part should render.
+ *
+ * WordPress gives a template part no `$post` of its own: `set_query_var( 'post',
+ * $id )` only writes into `$wp_query->query_vars`, so a card rendered outside
+ * the loop had `$post` undefined and fell through to `get_the_title( 0 )`.
+ * That call is documented to use the *current* post when given 0, which on the
+ * front page is the "Home" page — so every card on the homepage rendered as a
+ * card titled "Home" pointing at the homepage. The data was never wrong; the
+ * lookup was.
+ *
+ * Resolution order, most explicit first:
+ *
+ *   1. `$args['post_id']` / `$args['post']` — what a caller outside the loop
+ *      passes, e.g. a related-rail or a hand-picked showcase entry.
+ *   2. `$post` — correct when the caller is inside a real WP_Loop.
+ *   3. 0, meaning "unknown": the caller is expected to render a deliberate
+ *      empty state rather than silently print some other post's data.
+ *
+ * @param array $args Template arguments passed to get_template_part().
+ * @return int Post ID, or 0 when no post could be identified.
+ */
+function safari_card_post_id(array $args = []): int
+{
+    foreach (['post_id', 'post'] as $key) {
+        $candidate = $args[$key] ?? 0;
+
+        if (is_object($candidate) && isset($candidate->ID)) {
+            $candidate = (int) $candidate->ID;
+        }
+
+        $candidate = (int) $candidate;
+
+        if ($candidate > 0) {
+            return $candidate;
+        }
+    }
+
+    // Inside a WP_Loop, $post is a real object and is the right answer.
+    if (isset($post) && is_object($post) && isset($post->ID)) {
+        return (int) $post->ID;
+    }
+
+    return 0;
+}
+
+/**
  * Print a responsive featured image, or a branded placeholder.
  *
  * The hero variant is never lazy and carries fetchpriority=high so it can
