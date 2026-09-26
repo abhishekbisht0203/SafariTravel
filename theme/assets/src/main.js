@@ -11,9 +11,12 @@
  *   3. shell         — drawers/overlays (changes layout when opened)
  *   4. interactive   — counters, tilt, dust
  *   5. parallax      — last, because it measures the settled layout
+ *
+ * The stylesheet (./main.css) is deliberately NOT imported here. It is a
+ * separate Vite entry (see vite.config.js) so WordPress can enqueue it as a
+ * render-blocking <link> in development and production alike, instead of
+ * having it injected by this module after it evaluates.
  */
-
-import './main.css';
 
 import { flagJs } from './js/util.js';
 import { initReveals } from './js/reveal.js';

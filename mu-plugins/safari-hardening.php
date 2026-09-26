@@ -38,12 +38,41 @@ add_action('send_headers', static function (): void {
 	// Content Security Policy — report-only mode first; tighten per environment.
 	// Admin is excluded to avoid breaking the editor.
 	if (! is_admin()) {
+		/*
+		 * When the Vite dev server is running, its origin is added to the
+		 * directives that have to reach it: the page loads CSS and ES modules
+		 * from :5173, and the HMR client opens a WebSocket back to it. Without
+		 * this, every asset request is reported as a violation and — the moment
+		 * the policy moves from report-only to enforce — local development stops
+		 * loading entirely.
+		 *
+		 * The dev origin comes from the same .vite-dev flag the theme's enqueue
+		 * logic reads (theme/inc/assets.php), so there is still one place that
+		 * knows the dev server address. It resolves to false in production,
+		 * which is why the production policy is unchanged.
+		 */
+		$vite_dev = function_exists('safari_vite_dev_base_url') ? safari_vite_dev_base_url() : false;
+		$vite_src = '';
+		$vite_ws  = '';
+		if (is_string($vite_dev) && $vite_dev !== '') {
+			$parts = wp_parse_url($vite_dev);
+			if (! empty($parts['host'])) {
+				$origin = (isset($parts['scheme']) ? $parts['scheme'] : 'http')
+					. '://' . $parts['host']
+					. (isset($parts['port']) ? ':' . $parts['port'] : '');
+				$vite_src = ' ' . $origin;
+				// CSP does not let an http:// source stand in for ws:// in
+				// connect-src, and the HMR channel is a WebSocket.
+				$vite_ws = ' ' . preg_replace('/^http/', 'ws', $origin);
+			}
+		}
+
 		$csp  = "default-src 'self'; ";
-		$csp .= "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://www.googletagmanager.com; ";
-		$csp .= "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; ";
+		$csp .= "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://www.googletagmanager.com" . $vite_src . "; ";
+		$csp .= "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com" . $vite_src . "; ";
 		$csp .= "font-src 'self' https://fonts.gstatic.com data:; ";
-		$csp .= "img-src 'self' data: https:; ";
-		$csp .= "connect-src 'self' https://challenges.cloudflare.com; ";
+		$csp .= "img-src 'self' data: https:" . $vite_src . "; ";
+		$csp .= "connect-src 'self' https://challenges.cloudflare.com" . $vite_src . $vite_ws . "; ";
 		$csp .= "frame-src https://challenges.cloudflare.com; ";
 		$csp .= "object-src 'none'; ";
 		$csp .= "base-uri 'self';";

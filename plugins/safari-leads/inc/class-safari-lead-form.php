@@ -452,38 +452,22 @@ final class Safari_Lead_Form {
 	// ── Assets ────────────────────────────────────────────────────────────
 
 	public static function enqueue_assets(): void {
-		// Only enqueue when a form is on the page; block/shortcode render adds a body class.
-		// In the absence of a detection mechanism, enqueue globally (small script).
-		$dir = SAFARI_LEADS_DIR . 'assets/';
-		$url = SAFARI_LEADS_URL . 'assets/';
-
-		// Lead form JS (submit handler, step transitions, intl-tel-input).
-		wp_register_script(
-			'safari-lead-form',
-			$url . 'js/lead-form.js',
-			[],
-			SAFARI_LEADS_VERSION,
-			['in_footer' => true, 'strategy' => 'defer']
-		);
-
-		wp_localize_script('safari-lead-form', 'safariLeadForm', [
-			'restUrl'    => esc_url_raw(rest_url('safari/v1/leads')),
-			'nonce'      => wp_create_nonce('safari_lead_submit'),
-			'i18n'       => [
-				'sending'     => __('Sending…', 'safari-leads'),
-				'error'       => __('Something went wrong. Please try again.', 'safari-leads'),
-				'fieldErrors' => __('Please correct the highlighted fields.', 'safari-leads'),
-			],
-		]);
-
-		wp_enqueue_script('safari-lead-form');
-
-		// Turnstile (conditional).
+		/*
+		 * The form's submit handler, step transitions and validation live in
+		 * the theme's single JS runtime (theme/assets/src/js/lead-form.js,
+		 * bundled by Vite into the `safari-main` handle). This plugin
+		 * deliberately ships no second copy: a duplicate would be a second
+		 * source of truth for the same behaviour, and the file this code used
+		 * to point at does not exist, which meant a 404 on every page load.
+		 *
+		 * All this plugin still has to contribute is Cloudflare Turnstile,
+		 * which is optional and off unless a site key is configured.
+		 */
 		if ((string) Safari_Lead_Settings::get('turnstile_site_key') !== '') {
 			wp_enqueue_script(
 				'cf-turnstile',
 				'https://challenges.cloudflare.com/turnstile/v0/api.js',
-				['safari-lead-form'],
+				['safari-main'],
 				null,
 				['in_footer' => true, 'strategy' => 'defer']
 			);

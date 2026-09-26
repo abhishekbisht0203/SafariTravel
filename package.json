@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "wp": "php -d memory_limit=512M -S localhost:8080 -t wordpress scripts/router.php",
     "lint:js": "eslint theme/assets/src",
     "lint:css": "stylelint theme/assets/src/**/*.css",
     "lint": "npm run lint:js && npm run lint:css"

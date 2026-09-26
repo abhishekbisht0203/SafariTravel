@@ -27,10 +27,11 @@ if (! defined('WP_CLI') || ! WP_CLI) {
  * [--force]
  * : Delete previously seeded content before running.
  *
- * [--no-images]
- * : Skip image sideloading. Much faster, useful in CI.
+ * [--images]
+ * : Sideload images from Unsplash (the default). Pass --no-images to skip it,
+ * which is much faster and is what CI should use.
  *
- * [--posts-per-destination=2]
+ * [--posts-per-destination=<n>]
  * : How many tours to create per destination.
  *
  * ## EXAMPLES
@@ -50,10 +51,10 @@ class Safari_Seed_Command
      * [--force]
      * : Delete previously seeded content before running.
      *
-     * [--no-images]
-     * : Skip image sideloading.
+     * [--images]
+     * : Sideload images from Unsplash. Use --no-images to skip.
      *
-     * [--posts-per-destination=2]
+     * [--posts-per-destination=<n>]
      * : Tours to create per destination.
      *
      * @param array $args       Positional arguments.
@@ -62,7 +63,7 @@ class Safari_Seed_Command
     public function __invoke(array $args, array $assoc_args): void
     {
         $force     = (bool) ($assoc_args['force'] ?? false);
-        $no_images = (bool) ($assoc_args['no-images'] ?? false);
+        $no_images = array_key_exists('images', $assoc_args) ? ! $assoc_args['images'] : false;
         $per_dest  = max(1, (int) ($assoc_args['posts-per-destination'] ?? 2));
 
         WP_CLI::log('Seeding Safari Travel demo content…');
@@ -333,10 +334,19 @@ class Safari_Seed_Command
                 $postarr['meta_input']['safari_page_lead'] = $config['lead'];
             }
 
-            $id = $existing ? wp_update_post($postarr, true) : wp_insert_post($postarr, true);
+            if ($existing instanceof WP_Post) {
+                // wp_update_post() keys off the ID, so it must be set explicitly.
+                $postarr['ID'] = (int) $existing->ID;
+                $id            = wp_update_post($postarr, true);
+            } else {
+                $id = wp_insert_post($postarr, true);
+            }
 
-            if (is_wp_error($id)) {
-                WP_CLI::warning('Could not create page ' . $slug . ': ' . $id->get_error_message());
+            if (is_wp_error($id) || ! $id) {
+                WP_CLI::warning(
+                    'Could not create page ' . $slug . ': '
+                    . (is_wp_error($id) ? $id->get_error_message() : 'unknown error')
+                );
                 continue;
             }
 
@@ -1282,6 +1292,10 @@ class Safari_Seed_Command
      */
     private function upsert(string $post_type, array $data): int
     {
+        // wp_insert_post() defaults to `post` when post_type is absent, which
+        // silently filed every destination/tour/guide as a blog post.
+        $data['post_type'] = $post_type;
+
         $existing = get_posts([
             'post_type'   => $post_type,
             'name'        => $data['post_name'],
@@ -1316,16 +1330,25 @@ class Safari_Seed_Command
     /**
      * Turn an itinerary definition into an ACF repeater value.
      *
+     * Accepts both shapes used in this file: a positional
+     * `[title, description]` pair (the hand-written tours) and an associative
+     * `['day_title' => …, 'day_description' => …]` row (the generated ones).
+     *
      * @param array $days Day definitions.
      * @return array Repeater rows.
      */
     private function as_itinerary(array $days): array
     {
         return array_map(
-            static fn (array $day): array => [
-                'day_title'       => $day['day_title'],
-                'day_description' => $day['day_description'],
-            ],
+            static function (array $day): array {
+                $title = $day['day_title'] ?? $day[0] ?? '';
+                $body  = $day['day_description'] ?? $day[1] ?? '';
+
+                return [
+                    'day_title'       => (string) $title,
+                    'day_description' => (string) $body,
+                ];
+            },
             $days
         );
     }

@@ -44,7 +44,52 @@ After ~2 minutes open:
 
 ---
 
-## Day-to-day development
+## Day-to-day development (no Docker)
+
+Once the site has been installed once, running it locally needs only PHP's
+built-in server and the Vite dev server. Two terminals:
+
+```bash
+# Terminal 1 — WordPress on :8080
+npm run wp
+#   equivalent to: php -S localhost:8080 -t wordpress scripts/router.php
+#   The router is what makes pretty permalinks (/destinations/, /tours/, …)
+#   work; without it PHP's built-in server only serves the homepage.
+
+# Terminal 2 — Vite dev server + HMR on :5173
+npm run dev
+```
+
+Then open **<http://localhost:8080>**. That is the only URL you need: WordPress
+stays the application, and Vite only supplies the CSS/JS and the hot-reload
+channel. You never have to open :5173 yourself.
+
+| URL | What |
+|-----|------|
+| http://localhost:8080 | WordPress frontend — the site |
+| http://localhost:8080/wp-admin | WordPress admin (admin / admin123) |
+| http://localhost:5173/wp-content/themes/safari-theme/assets/dist/ | Vite dev server (assets + HMR only — not a page) |
+
+How the two halves find each other:
+
+- `vite.config.js` owns the dev mount path and writes it to `theme/.vite-dev`
+  while the dev server runs, refreshing it every few seconds.
+- `theme/inc/assets.php` reads that file. While it is fresh, the theme
+  enqueues `@vite/client`, `src/main.css` and `src/main.js` from the dev server
+  (as `type="module"`, so HMR works). If the dev server is not running — or
+  was killed without cleaning up — the flag goes stale and the theme falls
+  back to the built files in `theme/assets/dist/` automatically. You can delete
+  `theme/.vite-dev` to force the built assets at any time.
+
+To build the production assets (what a deploy would ship):
+
+```bash
+npm run build     # -> theme/assets/dist/ + manifest.json
+```
+
+---
+
+## Day-to-day development (Docker)
 
 ```bash
 # Start stack (if stopped)
@@ -92,9 +137,13 @@ safari-travel/
 ├── phpunit.xml
 ├── .phpcs.xml
 ├── theme/                    # safari-theme (custom WP theme)
-│   ├── src/                  # Source JS + CSS (Vite entry points)
-│   ├── assets/dist/          # Compiled, hashed assets (git-tracked or CI-built)
-│   ├── inc/                  # PHP includes
+│   ├── assets/src/           # THE source of truth for CSS + JS
+│   │   ├── main.css          # Vite entry: stylesheet
+│   │   ├── main.js           # Vite entry: JS runtime
+│   │   ├── css/              # tokens, base, layout, components, forms, motion, pages
+│   │   └── js/               # reveal, shell, ui, interactive, parallax, lead-form, home
+│   ├── assets/dist/          # Build output + manifest.json (gitignored, never edited)
+│   ├── inc/                  # PHP includes (assets.php owns the Vite enqueue)
 │   ├── template-parts/       # Partial templates
 │   ├── templates/            # Page templates
 │   └── woocommerce/          # WooCommerce overrides

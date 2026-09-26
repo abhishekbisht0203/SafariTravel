@@ -7,9 +7,16 @@
  * Windows: there is no cmd.exe quoting layer to mangle paths containing spaces
  * or backslashes, and no dependency on `tar`, `sh` or `mklink` being on PATH.
  *
+ * stdout and stderr are redirected to temporary files rather than pipes, for
+ * two reasons:
+ *   - Windows has no proc_select(), and stream_select() on proc_open pipes is
+ *     not dependable there, so live streaming is not portable.
+ *   - Pipes dead-lock: read stdout while the child fills the stderr buffer and
+ *     neither side moves. Files cannot.
+ *
  * A command may still be given as a string, in which case it is handed to the
  * platform shell — use that only for things that genuinely need shell features
- * (pipes, redirection, `2>&1`).
+ * (pipes, redirection).
  *
  * @package Safari_Travel\Tooling
  */
@@ -32,72 +39,12 @@ final class Process {
 	 * @return int Exit code.
 	 */
 	public static function run( string|array $command, array $env = array(), bool $echo = true, ?string $cwd = null ): int {
-		$descriptors = array(
-			0 => array( 'pipe', 'r' ),
-			1 => array( 'pipe', 'w' ),
-			2 => array( 'pipe', 'w' ),
-		);
+		$result = self::execute( $command, $env, $cwd, $echo );
 
-		$process = @proc_open(
-			self::normalise( $command ),
-			$descriptors,
-			$pipes,
-			$cwd,
-			self::mergeEnv( $env )
-		);
+		@unlink( $result['out_file'] );
+		@unlink( $result['err_file'] );
 
-		if ( ! is_resource( $process ) ) {
-			throw new RuntimeException( 'Unable to start process: ' . self::describe( $command ) );
-		}
-
-		fclose( $pipes[0] );
-		stream_set_blocking( $pipes[1], false );
-		stream_set_blocking( $pipes[2], false );
-
-		while ( true ) {
-			$read   = array_values( $pipes );
-			$write  = null;
-			$except = null;
-
-			if ( @proc_select( $read, $write, $except, 0, 200000 ) < 1 ) {
-				$status = proc_get_status( $process );
-
-				if ( ! $status['running'] ) {
-					break;
-				}
-
-				continue;
-			}
-
-			foreach ( $read as $stream ) {
-				$key = array_search( $stream, $pipes, true );
-
-				if ( false === $key ) {
-					continue;
-				}
-
-				$chunk = fread( $stream, 8192 );
-
-				if ( false === $chunk || '' === $chunk ) {
-					continue;
-				}
-
-				if ( $echo ) {
-					fwrite( ( 2 === $key ) ? STDERR : STDOUT, $chunk );
-				}
-			}
-		}
-
-		foreach ( $pipes as $pipe ) {
-			if ( is_resource( $pipe ) ) {
-				fclose( $pipe );
-			}
-		}
-
-		$code = proc_close( $process );
-
-		// proc_close can return -1 on some platforms when the child was reaped.
-		return ( -1 === $code ) ? 1 : $code;
+		return $result['code'];
 	}
 
 	/**
@@ -109,10 +56,40 @@ final class Process {
 	 * @return array{code:int,out:string,err:string}
 	 */
 	public static function capture( string|array $command, array $env = array(), ?string $cwd = null ): array {
+		$result = self::execute( $command, $env, $cwd, false );
+
+		$out = (string) @file_get_contents( $result['out_file'] );
+		$err = (string) @file_get_contents( $result['err_file'] );
+
+		@unlink( $result['out_file'] );
+		@unlink( $result['err_file'] );
+
+		return array(
+			'code' => $result['code'],
+			'out'  => $out,
+			'err'  => $err,
+		);
+	}
+
+	/**
+	 * Start a command and return the process handle plus its output files.
+	 *
+	 * Used by long-running commands (the dev server) where the caller wants to
+	 * keep polling itself.
+	 *
+	 * @param string|string[] $command Command and arguments.
+	 * @param string[]        $env     Extra environment variables.
+	 * @param string|null     $cwd     Working directory.
+	 * @return array{process:resource,in:string,out:string,err:string,offset:int}
+	 */
+	public static function start( string|array $command, array $env = array(), ?string $cwd = null ): array {
+		$outFile = tempnam( sys_get_temp_dir(), 'safari_out_' );
+		$errFile = tempnam( sys_get_temp_dir(), 'safari_err_' );
+
 		$descriptors = array(
 			0 => array( 'pipe', 'r' ),
-			1 => array( 'pipe', 'w' ),
-			2 => array( 'pipe', 'w' ),
+			1 => array( 'file', $outFile, 'w' ),
+			2 => array( 'file', $errFile, 'w' ),
 		);
 
 		$process = @proc_open(
@@ -127,18 +104,121 @@ final class Process {
 			throw new RuntimeException( 'Unable to start process: ' . self::describe( $command ) );
 		}
 
-		fclose( $pipes[0] );
-		$out = (string) stream_get_contents( $pipes[1] );
-		$err = (string) stream_get_contents( $pipes[2] );
-		fclose( $pipes[1] );
-		fclose( $pipes[2] );
+		if ( isset( $pipes[0] ) && is_resource( $pipes[0] ) ) {
+			fclose( $pipes[0] );
+		}
+
+		return array(
+			'process' => $process,
+			'in'      => $pipes[0] ?? null,
+			'out'     => $outFile,
+			'err'     => $errFile,
+			'offset'  => 0,
+		);
+	}
+
+	/**
+	 * Core execution loop shared by run() and capture().
+	 *
+	 * @param string|string[] $command Command.
+	 * @param string[]        $env     Environment.
+	 * @param string|null     $cwd     Working directory.
+	 * @param bool            $echo    Stream output.
+	 * @return array{code:int,out_file:string,err_file:string}
+	 */
+	private static function execute( string|array $command, array $env, ?string $cwd, bool $echo ): array {
+		$outFile = tempnam( sys_get_temp_dir(), 'safari_out_' );
+		$errFile = tempnam( sys_get_temp_dir(), 'safari_err_' );
+
+		$descriptors = array(
+			0 => array( 'pipe', 'r' ),
+			1 => array( 'file', $outFile, 'w' ),
+			2 => array( 'file', $errFile, 'w' ),
+		);
+
+		$process = @proc_open(
+			self::normalise( $command ),
+			$descriptors,
+			$pipes,
+			$cwd,
+			self::mergeEnv( $env )
+		);
+
+		if ( ! is_resource( $process ) ) {
+			throw new RuntimeException( 'Unable to start process: ' . self::describe( $command ) );
+		}
+
+		if ( isset( $pipes[0] ) && is_resource( $pipes[0] ) ) {
+			fclose( $pipes[0] );
+		}
+
+		$offsets = array( $outFile => 0, $errFile => 0 );
+
+		while ( true ) {
+			$status = proc_get_status( $process );
+			$busy   = false;
+
+			foreach ( $offsets as $file => $offset ) {
+				$size = @filesize( $file );
+
+				if ( false === $size || $size <= $offset ) {
+					continue;
+				}
+
+				$handle = @fopen( $file, 'rb' );
+
+				if ( ! is_resource( $handle ) ) {
+					continue;
+				}
+
+				fseek( $handle, $offset );
+				$chunk = (string) stream_get_contents( $handle );
+				fclose( $handle );
+
+				if ( '' === $chunk ) {
+					continue;
+				}
+
+				$offsets[ $file ] = $offset + strlen( $chunk );
+				$busy = true;
+
+				if ( $echo ) {
+					fwrite( ( $file === $errFile ) ? STDERR : STDOUT, $chunk );
+				}
+			}
+
+			if ( ! $status['running'] ) {
+				// Drain whatever landed after the final size check.
+				foreach ( $offsets as $file => $offset ) {
+					$handle = @fopen( $file, 'rb' );
+
+					if ( ! is_resource( $handle ) ) {
+						continue;
+					}
+
+					fseek( $handle, $offset );
+					$chunk = (string) stream_get_contents( $handle );
+					fclose( $handle );
+
+					if ( '' !== $chunk && $echo ) {
+						fwrite( ( $file === $errFile ) ? STDERR : STDOUT, $chunk );
+					}
+				}
+
+				break;
+			}
+
+			if ( ! $busy ) {
+				usleep( 20000 );
+			}
+		}
 
 		$code = proc_close( $process );
 
 		return array(
-			'code' => ( -1 === $code ) ? 1 : $code,
-			'out'  => $out,
-			'err'  => $err,
+			'code'     => ( -1 === $code ) ? 1 : $code,
+			'out_file' => $outFile,
+			'err_file' => $errFile,
 		);
 	}
 
@@ -149,16 +229,7 @@ final class Process {
 	 * @return bool
 	 */
 	public static function which( string $executable ): bool {
-		if ( Console::isWindows() ) {
-			// `where` ships with Windows; on the PATH separator is `;`.
-			$result = self::capture( array( 'where', $executable ) );
-
-			return 0 === $result['code'] && '' !== trim( $result['out'] );
-		}
-
-		$result = self::capture( array( 'which', $executable ) );
-
-		return 0 === $result['code'];
+		return null !== self::locate( $executable );
 	}
 
 	/**
@@ -168,11 +239,9 @@ final class Process {
 	 * @return string|null
 	 */
 	public static function locate( string $executable ): ?string {
-		$probe = Console::isWindows()
-			? array( 'where', $executable )
-			: array( 'which', $executable );
-
-		$result = self::capture( $probe );
+		$result = self::capture(
+			Console::isWindows() ? array( 'where', $executable ) : array( 'which', $executable )
+		);
 
 		if ( 0 !== $result['code'] ) {
 			return null;

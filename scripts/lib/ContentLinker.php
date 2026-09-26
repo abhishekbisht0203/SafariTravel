@@ -133,33 +133,45 @@ final class ContentLinker {
 	}
 
 	/**
-	 * Remove a link, junction or stale directory.
+	 * Remove a link, junction or directory inside wp-content.
+	 *
+	 * Two hard guarantees, because a mistake here destroys working source:
+	 *   1. The literal path must be inside wp-content. Nothing else is touched.
+	 *   2. Anything that resolves somewhere else is a link or junction, so only
+	 *      the link is removed — the code is never recursed into.
 	 *
 	 * @param string $path Path to remove.
 	 * @return void
+	 * @throws RuntimeException When the path is outside wp-content.
 	 */
 	public static function remove( string $path ): void {
-		if ( ! file_exists( $path ) && ! @realpath( $path ) ) {
+		if ( ! file_exists( $path ) && false === @realpath( $path ) ) {
 			return;
 		}
 
-		$content = @realpath( Config::wpContentDir() );
-		$target  = @realpath( $path );
-		$inside  = ( false !== $content && false !== $target && 0 === strpos( self::normalise( $target ), self::normalise( $content ) ) );
+		$literal  = self::normalise( $path );
+		$content  = self::normalise( (string) @realpath( Config::wpContentDir() ) );
+		$resolved = @realpath( $path );
 
-		// Never touch anything outside wp-content, and never wp-content itself.
-		if ( ! $inside || ( false !== $target && $target === $content ) ) {
-			self::deleteTree( $path );
-			return;
+		if ( '' === $content || 0 !== strpos( $literal, $content . '/' ) ) {
+			throw new RuntimeException(
+				'Refusing to remove ' . $path . ': it is not inside ' . Config::wpContentDir() . '.'
+			);
 		}
 
-		if ( is_link( $path ) ) {
-			@unlink( $path );
-			return;
-		}
+		// Resolving elsewhere means this is a symlink or a junction: unlink the
+		// link itself. Recursing here would delete the repository's real code.
+		if ( false !== $resolved && self::normalise( (string) $resolved ) !== $literal ) {
+			if ( @rmdir( $path ) ) {
+				return;
+			}
 
-		// A junction or symlinked directory: rmdir removes the link, not the target.
-		if ( @rmdir( $path ) ) {
+			if ( @unlink( $path ) ) {
+				return;
+			}
+
+			Process::run( array( 'cmd.exe', '/d', '/s', '/c', 'rmdir', $path ) );
+
 			return;
 		}
 
@@ -168,12 +180,7 @@ final class ContentLinker {
 			return;
 		}
 
-		if ( Console::isWindows() ) {
-			Process::run( array( 'cmd.exe', '/d', '/s', '/c', 'rmdir', $path ) );
-			return;
-		}
-
-		// A real directory inside wp-content: remove its contents, then the folder.
+		// A genuine directory that lives inside wp-content (copy mode).
 		self::deleteTree( $path );
 	}
 
@@ -331,14 +338,21 @@ final class ContentLinker {
 	}
 
 	/**
-	 * Recursively delete a directory tree.
+	 * Recursively delete a real directory tree.
+	 *
+	 * Nested symlinks and junctions are unlinked, never descended into, so this
+	 * can only ever delete real files that live at the given path.
 	 *
 	 * @param string $dir Directory.
+	 * @param int    $depth Recursion depth, as a belt-and-braces guard.
 	 * @return void
 	 */
-	private static function deleteTree( string $dir ): void {
-		if ( ! is_dir( $dir ) ) {
-			@unlink( $dir );
+	private static function deleteTree( string $dir, int $depth = 0 ): void {
+		if ( $depth > 12 || ! is_dir( $dir ) ) {
+			if ( is_file( $dir ) ) {
+				@unlink( $dir );
+			}
+
 			return;
 		}
 
@@ -347,12 +361,27 @@ final class ContentLinker {
 				continue;
 			}
 
-			if ( $item->isDir() && ! $item->isLink() ) {
-				self::deleteTree( $item->getPathname() );
+			$path = $item->getPathname();
+
+			if ( $item->isLink() ) {
+				@unlink( $path );
 				continue;
 			}
 
-			@unlink( $item->getPathname() );
+			if ( $item->isDir() ) {
+				// A junction reports as a directory but resolves elsewhere.
+				$resolved = @realpath( $path );
+
+				if ( false !== $resolved && self::normalise( (string) $resolved ) !== self::normalise( $path ) ) {
+					@rmdir( $path );
+					continue;
+				}
+
+				self::deleteTree( $path, $depth + 1 );
+				continue;
+			}
+
+			@unlink( $path );
 		}
 
 		@rmdir( $dir );

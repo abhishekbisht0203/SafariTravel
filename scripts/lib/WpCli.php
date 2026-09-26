@@ -77,6 +77,12 @@ final class WpCli {
 	 * Returned as an array so proc_open() runs it without a shell — the only
 	 * reliable way to pass Windows paths with spaces and backslashes.
 	 *
+	 * `display_errors=0` keeps WP-CLI's output readable. WP-CLI boots WordPress
+	 * more than once for commands such as `plugin activate`, which floods
+	 * stderr with "already registered" notices. Those are written to
+	 * wp-content/debug.log instead (WP_DEBUG_LOG is on), and a failed command
+	 * prints the tail of that log, so nothing is silently swallowed.
+	 *
 	 * @return string[]
 	 */
 	public static function parts(): array {
@@ -84,6 +90,12 @@ final class WpCli {
 
 		return array(
 			$php,
+			'-d',
+			'display_errors=0',
+			'-d',
+			'log_errors=1',
+			'-d',
+			'error_log=',
 			Config::wpCliPhar(),
 			'--path=' . Config::wpDir(),
 			'--allow-root',
@@ -121,7 +133,13 @@ final class WpCli {
 			return 1;
 		}
 
-		return Process::run( array_merge( self::parts(), $args ), array(), $echo, Config::root() );
+		$code = Process::run( array_merge( self::parts(), $args ), array(), $echo, Config::root() );
+
+		if ( 0 !== $code ) {
+			self::reportDebugLogTail();
+		}
+
+		return $code;
 	}
 
 	/**
@@ -140,5 +158,32 @@ final class WpCli {
 		}
 
 		return Process::capture( array_merge( self::parts(), $args ), array(), Config::root() );
+	}
+
+	/**
+	 * Print the tail of the WordPress debug log after a failed command.
+	 *
+	 * @param int $lines How many lines to show.
+	 * @return void
+	 */
+	public static function reportDebugLogTail( int $lines = 20 ): void {
+		$log = Config::wpContentDir() . '/debug.log';
+
+		if ( ! is_file( $log ) ) {
+			return;
+		}
+
+		$contents = (string) file_get_contents( $log );
+		$all      = preg_split( '/\R/', trim( $contents ) ) ?: array();
+		$tail     = array_slice( $all, -$lines );
+
+		if ( ! $tail ) {
+			return;
+		}
+
+		Console::write( '  Last ' . count( $tail ) . ' lines of wordpress/wp-content/debug.log:' );
+		foreach ( $tail as $line ) {
+			Console::write( '    ' . $line );
+		}
 	}
 }

@@ -501,16 +501,24 @@ final class Safari {
 	 * @return int
 	 */
 	private function seed(): int {
-		$passthrough = $this->args;
+		$args = array( 'safari', 'seed' );
 
-		if ( ! in_array( 'seed', $passthrough, true ) ) {
-			array_unshift( $passthrough, 'seed' );
+		if ( isset( $this->flags['force'] ) ) {
+			$args[] = '--force';
 		}
 
-		$code = WpCli::run( $passthrough );
+		if ( isset( $this->flags['no-images'] ) ) {
+			$args[] = '--no-images';
+		}
+
+		if ( isset( $this->flags['posts-per-destination'] ) && is_string( $this->flags['posts-per-destination'] ) ) {
+			$args[] = '--posts-per-destination=' . $this->flags['posts-per-destination'];
+		}
+
+		$code = WpCli::run( $args );
 
 		if ( 0 !== $code ) {
-			Console::error( 'Seeding failed. Run `php scripts/safari.php install` first if WordPress is not installed.' );
+			Console::error( 'Seeding failed. If WordPress is not installed yet, run: php scripts/safari.php install' );
 		}
 
 		return $code;
@@ -865,8 +873,15 @@ final class Safari {
 			}
 		}
 
-		$theme = WpCli::capture( array( 'theme', 'list', '--status=active', '--field=name' ) );
-		$theme = ( 0 === $theme['code'] ) ? trim( $theme['out'] ) : 'unknown';
+		$theme = WpCli::capture( array( 'theme', 'list', '--status=active', '--format=json' ) );
+		$name  = 'unknown';
+
+		if ( 0 === $theme['code'] ) {
+			$decoded = json_decode( $theme['out'], true );
+			if ( is_array( $decoded ) && isset( $decoded[0]['name'] ) ) {
+				$name = (string) $decoded[0]['name'];
+			}
+		}
 
 		Console::banner(
 			array(

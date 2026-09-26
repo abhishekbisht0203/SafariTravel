@@ -167,13 +167,10 @@ final class Installer {
 	 * @return void
 	 */
 	private static function activatePlugins(): void {
-		$available = WpCli::capture( array( 'plugin', 'list', '--status=active,inactive,broken', '--field=name' ) );
-		$installed = ( 0 === $available['code'] )
-			? array_filter( array_map( 'trim', explode( "\n", $available['out'] ) ) )
-			: array();
-
 		foreach ( Config::plugins() as $slug ) {
-			if ( ! in_array( $slug, $installed, true ) ) {
+			$isInstalled = WpCli::capture( array( 'plugin', 'is-installed', $slug ) );
+
+			if ( 0 !== $isInstalled['code'] ) {
 				Console::skip( sprintf( 'Plugin %s is not present in wp-content/plugins — skipped', $slug ) );
 				continue;
 			}

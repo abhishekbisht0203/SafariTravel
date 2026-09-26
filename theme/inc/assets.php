@@ -1,10 +1,18 @@
 <?php
 /**
- * Enqueue scripts and styles (Vite build output).
+ * Enqueue scripts and styles (Vite).
  *
- * The theme ships one self-contained JS runtime plus one stylesheet. Both are
- * built as IIFE/merged output (see vite.config.js) so they can be enqueued as
- * classic deferred scripts — no module graph, no extra round trips.
+ * Two modes, one entry point per mode:
+ *
+ *   - `npm run dev` running: CSS and JS come straight from the Vite dev
+ *     server, which also provides HMR. The mount URL is read from
+ *     theme/.vite-dev rather than hard-coded, so it always matches the base
+ *     path declared in vite.config.js.
+ *   - otherwise: the hashed, minified files named by the build manifest in
+ *     theme/assets/dist/manifest.json.
+ *
+ * The production bundle is IIFE (see vite.config.js) so it can be enqueued as
+ * a classic deferred script — no module graph, no extra round trips.
  *
  * @package Safari_Travel
  */
@@ -16,16 +24,41 @@ if (! defined('ABSPATH')) {
 }
 
 /**
- * Return the Vite dev server URL when running `npm run dev`, otherwise false.
+ * How long a `.vite-dev` flag may go unrefreshed before it is treated as dead.
+ *
+ * The Vite dev server rewrites the flag every few seconds (see
+ * HEARTBEAT_MS in vite.config.js). A flag that stops being touched means the
+ * dev server is gone — closed terminal, killed process, rebooted machine —
+ * and enqueueing its URLs would render the site completely unstyled.
  */
-function safari_vite_dev_server(): string|false
+const SAFARI_VITE_DEV_STALE_AFTER = 20;
+
+/**
+ * Return the Vite dev server mount URL when `npm run dev` is running.
+ *
+ * The flag file holds the full mount path, origin and base, exactly as Vite
+ * resolved it — e.g. http://localhost:5173/wp-content/themes/safari-theme/assets/dist
+ * — so WordPress never has to re-derive (or guess) the base path that
+ * vite.config.js declares. Returns false when the built assets should be used.
+ *
+ * @return string|false Dev server base URL without trailing slash, or false.
+ */
+function safari_vite_dev_base_url(): string|false
 {
     $flag = SAFARI_THEME_DIR . '/.vite-dev';
-    if (file_exists($flag)) {
-        $url = trim((string) file_get_contents($flag));
-        return $url !== '' ? $url : false;
+
+    if (! is_file($flag)) {
+        return false;
     }
-    return false;
+
+    $mtime = @filemtime($flag);
+    if ($mtime === false || (time() - $mtime) > SAFARI_VITE_DEV_STALE_AFTER) {
+        return false;
+    }
+
+    $url = trim((string) @file_get_contents($flag));
+
+    return $url !== '' ? untrailingslashit($url) : false;
 }
 
 /**
@@ -63,27 +96,81 @@ function safari_enqueue_local_font(string $handle, string $family, string $file,
     }
 }
 
-add_action('wp_enqueue_scripts', static function (): void {
-    $dev = safari_vite_dev_server();
+/**
+ * Force `type="module"` on the handles that need it.
+ *
+ * Both the Vite dev server and the production bundle are ES modules. That is
+ * not cosmetic:
+ *
+ *   - `@vite/client` and the dev entry are served with bare specifiers, which
+ *     a classic script cannot resolve at all.
+ *   - the HMR client can only patch modules that were loaded as modules.
+ *
+ * `wp_script_add_data( $handle, 'type', 'module' )` is silently ignored for
+ * classic scripts, so the attribute is added to the tag instead.
+ *
+ * @param string $tag    Script tag markup.
+ * @param string $handle Enqueue handle.
+ * @return string Filtered markup.
+ */
+add_filter('script_loader_tag', static function (string $tag, string $handle): string {
+    if (is_admin() || ! in_array($handle, ['safari-main', 'safari-vite-client'], true)) {
+        return $tag;
+    }
 
-    if ($dev) {
-        wp_enqueue_script('safari-vite-client', $dev . '/@vite/client', [], null, true);
+    if (str_contains($tag, 'type="module"')) {
+        return $tag;
+    }
+
+    return str_replace('<script ', '<script type="module" ', $tag);
+}, 10, 2);
+
+add_action('wp_enqueue_scripts', static function (): void {
+    $dev = safari_vite_dev_base_url();
+
+    if ($dev !== false) {
+        /*
+         * Development: the Vite dev server is the asset host. Every URL is
+         * built from the mount path Vite itself reported, so the two sides
+         * cannot drift.
+         */
+        wp_enqueue_script(
+            'safari-vite-client',
+            $dev . '/@vite/client',
+            [],
+            null,
+            ['in_footer' => true, 'strategy' => 'defer']
+        );
+
+        // Render-blocking by design: the whole design system is token-driven,
+        // so loading it as a stylesheet keeps first paint fully styled.
+        wp_enqueue_style('safari-main', $dev . '/src/main.css', [], null);
+
+        /*
+         * `type="module"` (added by the script_loader_tag filter above) is
+         * required, not cosmetic. In dev the dev server hands back real ES
+         * modules with bare specifiers; a classic script cannot resolve them,
+         * and the HMR client can only patch modules loaded as modules.
+         */
         wp_enqueue_script(
             'safari-main',
             $dev . '/src/main.js',
             ['safari-vite-client'],
             null,
-            true
+            ['in_footer' => true, 'strategy' => 'defer']
         );
+
         return;
     }
 
+    /*
+     * Production: resolve the hashed filenames from the build manifest. The
+     * manifest keys mirror the Vite entry names (src/main.js, src/main.css);
+     * the extra fallbacks keep older or differently-keyed manifests working.
+     */
     $manifest_path = SAFARI_THEME_DIR . '/assets/dist/manifest.json';
-    if (! file_exists($manifest_path)) {
-        $manifest_path = SAFARI_THEME_DIR . '/assets/dist/.vite/manifest.json';
-        if (! file_exists($manifest_path)) {
-            return;
-        }
+    if (! is_file($manifest_path)) {
+        return;
     }
 
     $manifest = json_decode((string) file_get_contents($manifest_path), true);
@@ -91,16 +178,17 @@ add_action('wp_enqueue_scripts', static function (): void {
         return;
     }
 
-    // Single entry, so the manifest key is whatever Vite was configured with.
-    $css = $manifest['style.css']['file']
-        ?? $manifest['src/main.css']['file']
+    $css = $manifest['src/main.css']['file']
+        ?? $manifest['style.css']['file']
         ?? $manifest['src/main.js']['css'][0]
         ?? null;
     $js  = $manifest['src/main.js']['file'] ?? null;
 
-    if ($css) {
-        // The whole stylesheet is ~18 KB gzipped and is required for first
-        // paint, so it is render-blocking by design (plan §10).
+    // Skip anything the manifest names but the build did not emit, so a stale
+    // manifest can never turn into a 404 in the page.
+    if (is_string($css) && is_file(SAFARI_THEME_DIR . '/assets/dist/' . $css)) {
+        // The whole stylesheet is required for first paint, so it is
+        // render-blocking by design (plan §10).
         wp_enqueue_style(
             'safari-main',
             SAFARI_THEME_URI . '/assets/dist/' . $css,
@@ -109,7 +197,13 @@ add_action('wp_enqueue_scripts', static function (): void {
         );
     }
 
-    if ($js) {
+    if (is_string($js) && is_file(SAFARI_THEME_DIR . '/assets/dist/' . $js)) {
+        /*
+         * The production bundle is a single self-contained ES module (it has no
+         * imports of its own), so `type="module"` gives it the same
+         * defer-by-default semantics as development and keeps one code path for
+         * both modes.
+         */
         wp_enqueue_script(
             'safari-main',
             SAFARI_THEME_URI . '/assets/dist/' . $js,
