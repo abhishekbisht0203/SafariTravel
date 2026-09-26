@@ -2,10 +2,11 @@
 /vendor/
 /node_modules/
 
-# Compiled assets (committed when deploying — optional, comment out if using CI build)
+# Compiled assets — produced by `npm run build`. Git-ignored because CI and
+# `php scripts/safari.php setup` both build them from source.
 /theme/assets/dist/
 
-# Vite dev flag
+# Vite dev-server flag written by the plugin in vite.config.js
 /theme/.vite-dev
 
 # Environment secrets
@@ -13,12 +14,21 @@
 .env.local
 .env.*.local
 
-# WordPress uploads (media managed separately)
+# ── WordPress core ───────────────────────────────────────────────────────────
+# Installed by Composer (roots/wordpress-no-content, pinned in composer.json).
+# wp-config.php, wp-config-salts.php, wp-content and the linked theme/plugins
+# all live here, so the whole directory is generated and must never be committed.
+/wordpress/
+/wp/
+
+# Repository-local WP-CLI phar, downloaded by setup at a pinned version.
+/wp-cli.phar
+
+# WordPress uploads (media managed separately; shared with Docker)
 /uploads/
 
-# WordPress core (managed via Docker image / Composer)
-/wp/
-/wordpress/
+# Local dev server pid marker
+/wordpress/.safari-server.pid
 
 # Logs & caches
 *.log
@@ -34,9 +44,6 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
-
-# PHP Composer lock — commit this for reproducible builds
-# composer.lock  # keep this line commented; DO commit composer.lock
 
 # Playwright
 /playwright-report/

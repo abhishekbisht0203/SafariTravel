@@ -26,9 +26,17 @@ final class Safari_Lead_Settings {
 	/**
 	 * Default settings.
 	 *
+	 * Cloudflare Turnstile keys may be supplied through the environment
+	 * (`TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY`, loaded from .env by
+	 * wp-config.php). Environment values are only used as the *default*, so an
+	 * administrator can still override them in the settings screen.
+	 *
 	 * @return array<string, mixed>
 	 */
 	public static function defaults(): array {
+		$site_key   = (string) getenv('TURNSTILE_SITE_KEY');
+		$secret_key = (string) getenv('TURNSTILE_SECRET_KEY');
+
 		$defaults = array(
 			'currency'             => 'USD',
 			'notify_emails'        => get_option( 'admin_email' ),
@@ -36,8 +44,8 @@ final class Safari_Lead_Settings {
 			'auto_reply'           => 0,
 			'auto_reply_subject'   => __( 'Thanks for contacting Safari Travel', 'safari-leads' ),
 			'auto_reply_message'   => __( "Hi {name},\r\n\r\nThanks for getting in touch. We have received your enquiry and one of our safari specialists will reply within one business day.\r\n\r\nWarm regards,\r\nThe Safari Travel team", 'safari-leads' ),
-			'turnstile_site_key'   => '',
-			'turnstile_secret_key' => '',
+			'turnstile_site_key'   => sanitize_text_field($site_key),
+			'turnstile_secret_key' => sanitize_text_field($secret_key),
 			'min_submit_seconds'   => 3,
 			'rate_limit_max'       => 5,
 			'rate_limit_window'    => 600,

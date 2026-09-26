@@ -2,9 +2,14 @@
 /**
  * Child process helpers.
  *
- * Everything the setup flow shells out to (composer, npm, wp-cli, the PHP
- * built-in server) goes through here so quoting, exit codes and stream
- * forwarding behave identically on Windows and Unix.
+ * Commands are normally passed as an *array* of arguments, which makes
+ * proc_open() execute them without a shell. That is what makes this reliable on
+ * Windows: there is no cmd.exe quoting layer to mangle paths containing spaces
+ * or backslashes, and no dependency on `tar`, `sh` or `mklink` being on PATH.
+ *
+ * A command may still be given as a string, in which case it is handed to the
+ * platform shell — use that only for things that genuinely need shell features
+ * (pipes, redirection, `2>&1`).
  *
  * @package Safari_Travel\Tooling
  */
@@ -20,32 +25,34 @@ final class Process {
 	/**
 	 * Run a command, streaming its output, and return the exit code.
 	 *
-	 * @param string   $command   Command line (executable plus arguments).
-	 * @param string[] $env       Extra environment variables.
-	 * @param bool     $echo      Stream output to the terminal.
-	 * @param string   $cwd       Working directory.
+	 * @param string|string[] $command Command and arguments.
+	 * @param string[]        $env     Extra environment variables.
+	 * @param bool            $echo    Stream output to the terminal.
+	 * @param string|null     $cwd     Working directory.
 	 * @return int Exit code.
 	 */
-	public static function run( string $command, array $env = array(), bool $echo = true, ?string $cwd = null ): int {
+	public static function run( string|array $command, array $env = array(), bool $echo = true, ?string $cwd = null ): int {
 		$descriptors = array(
 			0 => array( 'pipe', 'r' ),
 			1 => array( 'pipe', 'w' ),
 			2 => array( 'pipe', 'w' ),
 		);
 
-		$merged = self::mergeEnv( $env );
-
-		$process = @proc_open( self::wrap( $command ), $descriptors, $pipes, $cwd, $merged );
+		$process = @proc_open(
+			self::normalise( $command ),
+			$descriptors,
+			$pipes,
+			$cwd,
+			self::mergeEnv( $env )
+		);
 
 		if ( ! is_resource( $process ) ) {
-			throw new RuntimeException( 'Unable to start process: ' . $command );
+			throw new RuntimeException( 'Unable to start process: ' . self::describe( $command ) );
 		}
 
 		fclose( $pipes[0] );
 		stream_set_blocking( $pipes[1], false );
 		stream_set_blocking( $pipes[2], false );
-
-		$buffers = array( 1 => '', 2 => '' );
 
 		while ( true ) {
 			$read   = array_values( $pipes );
@@ -54,29 +61,30 @@ final class Process {
 
 			if ( @proc_select( $read, $write, $except, 0, 200000 ) < 1 ) {
 				$status = proc_get_status( $process );
+
 				if ( ! $status['running'] ) {
 					break;
 				}
+
 				continue;
 			}
 
 			foreach ( $read as $stream ) {
 				$key = array_search( $stream, $pipes, true );
+
 				if ( false === $key ) {
 					continue;
 				}
 
 				$chunk = fread( $stream, 8192 );
+
 				if ( false === $chunk || '' === $chunk ) {
 					continue;
 				}
 
 				if ( $echo ) {
-					$target = ( 2 === $key ) ? STDERR : STDOUT;
-					fwrite( $target, $chunk );
+					fwrite( ( 2 === $key ) ? STDERR : STDOUT, $chunk );
 				}
-
-				$buffers[ $key ] .= $chunk;
 			}
 		}
 
@@ -88,29 +96,35 @@ final class Process {
 
 		$code = proc_close( $process );
 
-		// proc_close can return -1 on some platforms; fall back to the last status.
+		// proc_close can return -1 on some platforms when the child was reaped.
 		return ( -1 === $code ) ? 1 : $code;
 	}
 
 	/**
-	 * Run a command and capture stdout as a string.
+	 * Run a command and capture stdout and stderr.
 	 *
-	 * @param string   $command Command line.
-	 * @param string[] $env     Extra environment variables.
-	 * @param string   $cwd     Working directory.
+	 * @param string|string[] $command Command and arguments.
+	 * @param string[]        $env     Extra environment variables.
+	 * @param string|null     $cwd     Working directory.
 	 * @return array{code:int,out:string,err:string}
 	 */
-	public static function capture( string $command, array $env = array(), ?string $cwd = null ): array {
+	public static function capture( string|array $command, array $env = array(), ?string $cwd = null ): array {
 		$descriptors = array(
 			0 => array( 'pipe', 'r' ),
 			1 => array( 'pipe', 'w' ),
 			2 => array( 'pipe', 'w' ),
 		);
 
-		$process = @proc_open( self::wrap( $command ), $descriptors, $pipes, $cwd, self::mergeEnv( $env ) );
+		$process = @proc_open(
+			self::normalise( $command ),
+			$descriptors,
+			$pipes,
+			$cwd,
+			self::mergeEnv( $env )
+		);
 
 		if ( ! is_resource( $process ) ) {
-			throw new RuntimeException( 'Unable to start process: ' . $command );
+			throw new RuntimeException( 'Unable to start process: ' . self::describe( $command ) );
 		}
 
 		fclose( $pipes[0] );
@@ -129,19 +143,69 @@ final class Process {
 	}
 
 	/**
-	 * Check whether an executable can be found on PATH.
+	 * Check whether an executable resolves on PATH.
 	 *
 	 * @param string $executable Executable name.
 	 * @return bool
 	 */
 	public static function which( string $executable ): bool {
+		if ( Console::isWindows() ) {
+			// `where` ships with Windows; on the PATH separator is `;`.
+			$result = self::capture( array( 'where', $executable ) );
+
+			return 0 === $result['code'] && '' !== trim( $result['out'] );
+		}
+
+		$result = self::capture( array( 'which', $executable ) );
+
+		return 0 === $result['code'];
+	}
+
+	/**
+	 * Resolve an executable to an absolute path, or return null.
+	 *
+	 * @param string $executable Executable name.
+	 * @return string|null
+	 */
+	public static function locate( string $executable ): ?string {
 		$probe = Console::isWindows()
-			? 'where ' . escapeshellarg( $executable )
-			: 'command -v ' . escapeshellarg( $executable ) . ' >/dev/null 2>&1';
+			? array( 'where', $executable )
+			: array( 'which', $executable );
 
 		$result = self::capture( $probe );
 
-		return 0 === $result['code'] && '' !== trim( $result['out'] . $result['err'] );
+		if ( 0 !== $result['code'] ) {
+			return null;
+		}
+
+		$lines = array_filter( array_map( 'trim', preg_split( '/\R/', $result['out'] ) ?: array() ) );
+
+		return $lines ? (string) $lines[0] : null;
+	}
+
+	/**
+	 * Prepare a command for proc_open.
+	 *
+	 * @param string|string[] $command Command.
+	 * @return array{0:string}|string
+	 */
+	private static function normalise( string|array $command ): array|string {
+		if ( is_array( $command ) ) {
+			// Drop empty arguments so callers can pass optional flags freely.
+			return array_values( array_filter( array_map( 'strval', $command ), static fn (string $a): bool => '' !== $a ) );
+		}
+
+		return $command;
+	}
+
+	/**
+	 * Human-readable form of a command, for error messages.
+	 *
+	 * @param string|string[] $command Command.
+	 * @return string
+	 */
+	private static function describe( string|array $command ): string {
+		return is_array( $command ) ? implode( ' ', $command ) : $command;
 	}
 
 	/**
@@ -159,31 +223,10 @@ final class Process {
 			}
 		}
 
-		if ( ! $extra ) {
-			return $base ?: null;
-		}
-
 		foreach ( $extra as $key => $value ) {
 			$base[ $key ] = (string) $value;
 		}
 
-		return $base;
-	}
-
-	/**
-	 * Wrap a command for the current platform.
-	 *
-	 * On Windows `cmd.exe /d /s /c` is required so that batch files such as
-	 * `npm.cmd` resolve correctly.
-	 *
-	 * @param string $command Command line.
-	 * @return string
-	 */
-	private static function wrap( string $command ): string {
-		if ( ! Console::isWindows() ) {
-			return $command;
-		}
-
-		return 'cmd.exe /d /s /c ' . escapeshellcmd( $command );
+		return $base ?: null;
 	}
 }

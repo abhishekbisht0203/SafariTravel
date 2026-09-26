@@ -30,7 +30,13 @@ require SAFARI_LEADS_DIR . 'inc/class-safari-lead-form.php';
 require SAFARI_LEADS_DIR . 'inc/class-safari-lead-email.php';
 
 if (is_admin()) {
-	require SAFARI_LEADS_DIR . 'inc/admin/class-safari-lead-admin.php';
+	// The admin screens are an optional extra; the plugin must not fatal if the
+	// file is absent (e.g. a partial checkout).
+	$safari_leads_admin = SAFARI_LEADS_DIR . 'inc/admin/class-safari-lead-admin.php';
+	if (file_exists($safari_leads_admin)) {
+		require $safari_leads_admin;
+		unset($safari_leads_admin);
+	}
 }
 
 add_action('plugins_loaded', static function (): void {

@@ -63,8 +63,23 @@ final class Console {
 	 * @param string $code ANSI code.
 	 * @return string
 	 */
-	private static function paint( string $text, string $code ): string {
+	public static function paint( string $text, string $code ): string {
 		return self::colour() ? "\033[" . $code . 'm' . $text . "\033[0m" : $text;
+	}
+
+	/**
+	 * A fixed-width status marker for diagnostic rows.
+	 *
+	 * @param bool $ok       Whether the check passed.
+	 * @param bool $optional Whether a failure is only a warning.
+	 * @return string
+	 */
+	public static function mark( bool $ok, bool $optional = false ): string {
+		if ( $ok ) {
+			return self::paint( '  OK   ', '32' );
+		}
+
+		return $optional ? self::paint( '  WARN ', '33' ) : self::paint( '  FAIL ', '31' );
 	}
 
 	/**
