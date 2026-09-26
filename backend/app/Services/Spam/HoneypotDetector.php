@@ -58,6 +58,11 @@ final class HoneypotDetector
      * Laravel's rate limiter so the window lives in one place and the same key
      * can be inspected or cleared by the API.
      *
+     * The budget is "submissions allowed per window", which is what
+     * Safari_Lead_Save::is_rate_limited implements on the WordPress side, so
+     * switching a form between the two endpoints cannot change how many
+     * submissions a visitor gets.
+     *
      * @return bool True when the caller has exceeded the limit.
      */
     public function isRateLimited(?string $ip = null): bool

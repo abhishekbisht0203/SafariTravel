@@ -83,6 +83,20 @@ class WordPressClient
     }
 
     /**
+     * REST namespace for the private API bridge.
+     *
+     * Separate from `safari/v1` on purpose: the bridge is server-to-server only
+     * and authenticated with a shared key, and must never be reachable by
+     * accident from the public API surface.
+     */
+    public function bridgeRestUrl(string $path = ''): string
+    {
+        $path = ltrim($path, '/');
+
+        return $this->normalizedBaseUrl().'/wp-json/safari-api/v1'.('' === $path ? '' : '/'.$path);
+    }
+
+    /**
      * Read a published collection, cached briefly.
      *
      * @param  array<string, mixed>  $query
@@ -227,7 +241,7 @@ class WordPressClient
         return $this->request()
             ->asJson()
             ->withHeader((string) config('safari.api.header', 'X-Safari-Api-Key'), (string) config('safari.api.key', ''))
-            ->post($this->safariRestUrl($safariPath), $payload);
+            ->post($this->bridgeRestUrl($safariPath), $payload);
     }
 
     /**
@@ -243,7 +257,7 @@ class WordPressClient
         return $this->request()
             ->asJson()
             ->withHeader((string) config('safari.api.header', 'X-Safari-Api-Key'), (string) config('safari.api.key', ''))
-            ->patch($this->safariRestUrl($safariPath), $payload);
+            ->patch($this->bridgeRestUrl($safariPath), $payload);
     }
 
     /**

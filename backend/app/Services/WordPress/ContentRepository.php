@@ -100,6 +100,10 @@ final class ContentRepository
     /**
      * WordPress returns titles and excerpts as rendered HTML. The API returns
      * plain text so the client decides how to render it.
+     *
+     * Block-level closing tags become a space first: without that,
+     * `<p>One.</p><p>Two.</p>` would collapse to `One.Two.` and two words
+     * would be welded together.
      */
     private function plainText(mixed $value): string
     {
@@ -107,7 +111,8 @@ final class ContentRepository
             $value = (string) ($value['rendered'] ?? '');
         }
 
-        $text = strip_tags((string) $value);
+        $text = (string) preg_replace('#</(p|div|li|h[1-6]|br)\s*/?>#i', ' ', (string) $value);
+        $text = strip_tags($text);
         $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
         return trim((string) preg_replace('/\s+/u', ' ', $text));

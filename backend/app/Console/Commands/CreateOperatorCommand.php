@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 /**
  * Create or update an API operator.
@@ -74,7 +75,7 @@ class CreateOperatorCommand extends Command
             $this->info('Updated existing operator '.$email.' (role: '.$role.').');
         } else {
             User::query()->create([
-                'name' => '' !== $name ? $name : Str_before($email, '@'),
+                'name' => '' !== $name ? $name : Str::before($email, '@'),
                 'email' => $email,
                 'role' => $role,
                 'password' => Hash::make($password),

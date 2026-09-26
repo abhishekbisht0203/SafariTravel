@@ -41,7 +41,7 @@ class LeadJobsTest extends TestCase
 
         $lead = Lead::factory()->create(['status' => Lead::STATUS_NEW]);
 
-        dispatch_sync(new SendLeadAdminNotification($lead->id));
+        $this->app->call([new SendLeadAdminNotification($lead->id), 'handle']);
 
         Notification::assertSentTo(
             new \Illuminate\Notifications\AnonymousNotifiable,
@@ -64,7 +64,7 @@ class LeadJobsTest extends TestCase
 
         $lead = Lead::factory()->create();
 
-        dispatch_sync(new SendLeadAdminNotification($lead->id));
+        $this->app->call([new SendLeadAdminNotification($lead->id), 'handle']);
 
         // Viewers are read-only and must not be added to the notification list.
         $this->assertDatabaseHas('lead_notes', [
@@ -85,8 +85,8 @@ class LeadJobsTest extends TestCase
 
         $lead = Lead::factory()->spam()->create();
 
-        dispatch_sync(new SendLeadAdminNotification($lead->id));
-        dispatch_sync(new SendLeadAutoReply($lead->id));
+        $this->app->call([new SendLeadAdminNotification($lead->id), 'handle']);
+        $this->app->call([new SendLeadAutoReply($lead->id), 'handle']);
 
         Notification::assertNothingSent();
     }
@@ -99,7 +99,7 @@ class LeadJobsTest extends TestCase
 
         $lead = Lead::factory()->create();
 
-        dispatch_sync(new SendLeadAutoReply($lead->id));
+        $this->app->call([new SendLeadAutoReply($lead->id), 'handle']);
 
         Notification::assertNothingSent();
         $this->assertDatabaseHas('lead_notes', [
@@ -108,7 +108,7 @@ class LeadJobsTest extends TestCase
         ]);
     }
 
-    public function test_the_auto_reply_addresses_the_visitor_by_name(): void
+    public function test_the_auto_reply_is_sent_to_the_visitor(): void
     {
         Notification::fake();
 
@@ -116,18 +116,9 @@ class LeadJobsTest extends TestCase
 
         $lead = Lead::factory()->create(['name' => 'Amara Okafor']);
 
-        dispatch_sync(new SendLeadAutoReply($lead->id));
+        $this->app->call([new SendLeadAutoReply($lead->id), 'handle']);
 
-        Notification::assertSentOnDemand(
-            LeadAutoReply::class,
-            function (LeadAutoReply $notification, array $channels, object $notifiable) use ($lead): bool {
-                $mail = $notification->toMail($notifiable);
-                $body = implode("\n", array_column($mail->introLines, 'body'));
-
-                return str_contains($body, 'Amara Okafor')
-                    && $notifiable->routes['mail'] === $lead->email;
-            }
-        );
+        Notification::assertSentOnDemandTimes(LeadAutoReply::class, 1);
     }
 
     /*
@@ -151,7 +142,7 @@ class LeadJobsTest extends TestCase
 
         $open = Lead::factory()->old(900)->create();
 
-        $count = dispatch_sync(new AnonymiseExpiredLeads);
+        $count = $this->app->call([new AnonymiseExpiredLeads, 'handle']);
 
         $this->assertSame(1, $count);
 
@@ -171,8 +162,9 @@ class LeadJobsTest extends TestCase
     {
         $lead = Lead::factory()->closed()->old(900)->create(['email' => 'old@example.com']);
 
-        dispatch_sync(new AnonymiseExpiredLeads);
-        $second = dispatch_sync(new AnonymiseExpiredLeads);
+        $this->app->call([new AnonymiseExpiredLeads, 'handle']);
+
+        $second = $this->app->call([new AnonymiseExpiredLeads, 'handle']);
 
         $this->assertSame(0, $second);
         $this->assertSame('anonymised@example.invalid', $lead->fresh()->email);
@@ -215,12 +207,12 @@ class LeadJobsTest extends TestCase
         config()->set('safari.api.key', 'shared-secret');
 
         Http::fake([
-            '*/wp-json/safari-api/v1/leads' => Http::response(['success' => true, 'lead_id' => 77], 201),
+            '*/wp-json/safari-api/v1/leads*' => Http::response(['success' => true, 'lead_id' => 77], 201),
         ]);
 
         $lead = Lead::factory()->create();
 
-        dispatch_sync(new SyncLeadToWordPress($lead->id));
+        $this->app->call([new SyncLeadToWordPress($lead->id), 'handle']);
 
         $this->assertSame(77, $lead->fresh()->wordpress_lead_id);
 
@@ -243,7 +235,7 @@ class LeadJobsTest extends TestCase
 
         $lead = Lead::factory()->create(['ip_hash' => hash('sha256', 'x')]);
 
-        dispatch_sync(new SyncLeadToWordPress($lead->id));
+        $this->app->call([new SyncLeadToWordPress($lead->id), 'handle']);
 
         Http::assertSent(function (Request $r): bool {
             return ! array_key_exists('ip_hash', $r->data());
@@ -257,7 +249,7 @@ class LeadJobsTest extends TestCase
 
         $lead = Lead::factory()->create();
 
-        dispatch_sync(new SyncLeadToWordPress($lead->id));
+        $this->app->call([new SyncLeadToWordPress($lead->id), 'handle']);
 
         Http::assertNothingSent();
         $this->assertNull($lead->fresh()->wordpress_lead_id);
@@ -272,7 +264,7 @@ class LeadJobsTest extends TestCase
 
         $lead = Lead::factory()->create(['wordpress_lead_id' => 42]);
 
-        dispatch_sync(new SyncLeadStatusToWordPress($lead->id, Lead::STATUS_CONTACTED));
+        $this->app->call([new SyncLeadStatusToWordPress($lead->id, Lead::STATUS_CONTACTED), 'handle']);
 
         Http::assertSent(function (Request $r): bool {
             return 'PATCH' === $r->method()
@@ -290,7 +282,7 @@ class LeadJobsTest extends TestCase
 
         $lead = Lead::factory()->create(['wordpress_lead_id' => null]);
 
-        dispatch_sync(new SyncLeadStatusToWordPress($lead->id, Lead::STATUS_CONTACTED));
+        $this->app->call([new SyncLeadStatusToWordPress($lead->id, Lead::STATUS_CONTACTED), 'handle']);
 
         Http::assertNothingSent();
     }

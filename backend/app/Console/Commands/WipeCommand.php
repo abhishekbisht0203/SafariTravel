@@ -77,7 +77,7 @@ class WipeCommand extends Command
             return self::FAILURE;
         }
 
-        DB::connection($connection)->statement('set foreign_key_checks = 0');
+        DB::connection($connection)->statement($this->disableForeignKeys($connection));
 
         foreach ($tables as $table) {
             // Raw statement on purpose: Schema::drop() would prepend the
@@ -89,7 +89,7 @@ class WipeCommand extends Command
             $this->line('  dropped  '.$table);
         }
 
-        DB::connection($connection)->statement('set foreign_key_checks = 1');
+        DB::connection($connection)->statement($this->enableForeignKeys($connection));
 
         $this->newLine();
         $this->info(sprintf('Dropped %d table(s) with the prefix "%s".', count($tables), $prefix));
@@ -104,27 +104,74 @@ class WipeCommand extends Command
     private function tables(string $connection, string $prefix): array
     {
         $database = (string) config('database.connections.'.$connection.'.database');
+        $driver = (string) config('database.connections.'.$connection.'.driver');
 
         if ('' === $database) {
             return [];
         }
 
-        $rows = DB::connection($connection)->select(
-            'select table_name as name from information_schema.tables where table_schema = ? and table_name like ?',
-            [$database, $this->escapeLike($prefix).'%'],
-        );
+        $like = $this->escapeLike($prefix).'%';
+
+        // SQLite's LIKE has no default escape character, so the ESCAPE clause
+        // has to be stated explicitly or the backslashes are matched literally
+        // (which would silently match nothing).
+        $escape = match ($driver) {
+            'sqlite' => " escape '\\'",
+            default => '',
+        };
+
+        $rows = match ($driver) {
+            'sqlite' => DB::connection($connection)->select(
+                "select name from sqlite_master where type = 'table' and name like ?{$escape}",
+                [$like]
+            ),
+            'pgsql' => DB::connection($connection)->select(
+                'select table_name as name from information_schema.tables where table_schema = current_schema() and table_name like ?',
+                [$like]
+            ),
+            default => DB::connection($connection)->select(
+                'select table_name as name from information_schema.tables where table_schema = ? and table_name like ?',
+                [$database, $like]
+            ),
+        };
 
         $names = [];
 
         foreach ($rows as $row) {
-            $name = (string) ($row->name ?? $row->NAME ?? '');
+            $name = (string) ($row->name ?? $row->NAME ?? $row->table_name ?? '');
 
-            if ('' !== $name) {
-                $names[] = $name;
+            // sqlite_sequence and friends are engine bookkeeping, not ours.
+            if ('' === $name || str_starts_with($name, 'sqlite_')) {
+                continue;
             }
+
+            $names[] = $name;
         }
 
         return $names;
+    }
+
+    /**
+     * SQLite has no session-level foreign key switch that survives a schema
+     * change in the same way MySQL's does, but the pragma is the equivalent and
+     * is scoped to this connection only.
+     */
+    private function disableForeignKeys(string $connection): string
+    {
+        return match ((string) config('database.connections.'.$connection.'.driver')) {
+            'sqlite' => 'PRAGMA foreign_keys = OFF',
+            'pgsql' => 'SET session_replication_role = replica',
+            default => 'set foreign_key_checks = 0',
+        };
+    }
+
+    private function enableForeignKeys(string $connection): string
+    {
+        return match ((string) config('database.connections.'.$connection.'.driver')) {
+            'sqlite' => 'PRAGMA foreign_keys = ON',
+            'pgsql' => 'SET session_replication_role = origin',
+            default => 'set foreign_key_checks = 1',
+        };
     }
 
     /**

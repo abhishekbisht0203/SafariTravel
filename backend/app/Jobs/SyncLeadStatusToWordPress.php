@@ -44,7 +44,7 @@ class SyncLeadStatusToWordPress implements ShouldQueue
             return;
         }
 
-        $response = $client->patch('api/leads/'.$lead->wordpress_lead_id, [
+        $response = $client->patch('leads/'.$lead->wordpress_lead_id, [
             'status' => $this->status,
         ]);
 

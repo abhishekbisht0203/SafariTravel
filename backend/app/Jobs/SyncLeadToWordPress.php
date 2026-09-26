@@ -50,7 +50,7 @@ class SyncLeadToWordPress implements ShouldQueue
         $payload['consent_privacy'] = $lead->consent_privacy;
         $payload['consent_marketing'] = $lead->consent_marketing;
 
-        $response = $client->post('api/leads', $payload);
+        $response = $client->post('leads', $payload);
 
         if (! $response->successful()) {
             Log::warning('WordPress lead mirror failed.', [
