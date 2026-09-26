@@ -1,15 +1,34 @@
 {
   "extends": ["stylelint-config-standard"],
   "rules": {
-    "selector-class-pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*(__[a-z0-9]+(-[a-z0-9]+)*)?(--[a-z0-9]+(-[a-z0-9]+)*)?$",
+    "selector-class-pattern": "^(?:[a-z][a-z0-9]*(-[a-z0-9]+)*(__[a-z0-9]+(-[a-z0-9]+)*)?(--[a-z0-9]+(-[a-z0-9]+)*)?|(?:woocommerce|wc|shop|product|cart|checkout|order|wp|gallery|align|is-style|screen-reader|st-drawer|no-js|js|comment|bypostauthor|has|tax|post|page)[a-zA-Z0-9_-]*)$",
     "custom-property-pattern": "^([a-z][a-z0-9]*)(--?[a-z0-9]+)*$",
+    "custom-property-empty-line-before": null,
+    "value-keyword-case": null,
     "color-named": "never",
     "declaration-no-important": [true, { "severity": "warning" }],
     "font-family-no-missing-generic-family-keyword": true,
     "no-descending-specificity": null,
     "alpha-value-notation": "number",
     "color-function-notation": "modern",
-    "media-feature-range-notation": "prefix"
+    "media-feature-range-notation": "prefix",
+
+    "import-notation": null,
+    "comment-empty-line-before": null,
+    "font-family-name-quotes": null,
+    "declaration-block-no-redundant-longhand-properties": null,
+    "function-url-quotes": null,
+
+    "at-rule-no-unknown": [
+      true,
+      {
+        "ignoreAtRules": ["tailwind", "layer", "container", "media"]
+      }
+    ]
   },
-  "ignoreFiles": ["theme/assets/dist/**", "node_modules/**"]
+  "ignoreFiles": [
+    "theme/assets/dist/**",
+    "node_modules/**",
+    "vendor/**"
+  ]
 }

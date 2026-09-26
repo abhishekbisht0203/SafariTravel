@@ -18,48 +18,59 @@
 				{
 					"slug": "primary",
 					"color": "#1B5E43",
-					"name": "Primary"
+					"name": "Forest"
 				},
 				{
 					"slug": "primary-dark",
-					"color": "#123F2D",
-					"name": "Primary Dark"
+					"color": "#0F2B1F",
+					"name": "Forest Deep"
 				},
 				{
 					"slug": "accent",
-					"color": "#D4A017",
-					"name": "Accent"
+					"color": "#C9A227",
+					"name": "Gold"
+				},
+				{
+					"slug": "accent-soft",
+					"color": "#F7ECC9",
+					"name": "Gold Soft"
+				},
+				{
+					"slug": "clay",
+					"color": "#B4522C",
+					"name": "Clay"
 				},
 				{
 					"slug": "ink",
-					"color": "#1A1A1A",
+					"color": "#14100B",
 					"name": "Ink"
 				},
 				{
 					"slug": "ink-soft",
-					"color": "#4A4A4A",
+					"color": "#6B6153",
 					"name": "Ink Soft"
 				},
 				{
 					"slug": "surface",
-					"color": "#FAFAF7",
-					"name": "Surface"
+					"color": "#FDFBF7",
+					"name": "Paper"
 				},
 				{
 					"slug": "surface-alt",
-					"color": "#F0EDE6",
-					"name": "Surface Alt"
+					"color": "#F2ECE0",
+					"name": "Paper Alt"
 				},
 				{
 					"slug": "line",
-					"color": "#E2DED4",
+					"color": "#E7DECB",
 					"name": "Line"
 				},
 				{
 					"slug": "white",
 					"color": "#FFFFFF",
 					"name": "White"
-				]
+				}
+			]
 			]
 		},
 		"spacing": {
@@ -203,13 +214,33 @@
 	],
 	"customTemplates": [
 		{
-			"name": "page-full-width",
-			"title": "Full width",
+			"name": "page-templates/template-plan-my-safari",
+			"title": "Plan My Safari",
 			"postTypes": ["page"]
 		},
 		{
-			"name": "page-no-title",
-			"title": "No title",
+			"name": "page-templates/template-contact",
+			"title": "Contact",
+			"postTypes": ["page"]
+		},
+		{
+			"name": "page-templates/template-faq",
+			"title": "FAQ",
+			"postTypes": ["page"]
+		},
+		{
+			"name": "page-templates/template-thank-you",
+			"title": "Thank You",
+			"postTypes": ["page"]
+		},
+		{
+			"name": "page-templates/template-full-width",
+			"title": "Full Width",
+			"postTypes": ["page"]
+		},
+		{
+			"name": "page-templates/template-no-title",
+			"title": "No Title",
 			"postTypes": ["page"]
 		}
 	]

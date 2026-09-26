@@ -1,0 +1,301 @@
+/**
+ * ============================================================================
+ * SAFARI TRAVEL — DESIGN TOKENS
+ * Direction: "Editorial Safari" — deep forest ink, warm paper, gold accents,
+ * large immersive photography, generous whitespace, thin gold rules.
+ *
+ * This file is the single source of truth for colour, type, space, elevation,
+ * motion and layout primitives. Nothing here may be overridden ad-hoc; add a
+ * token instead.
+ * ============================================================================
+ */
+
+:root {
+  /* --------------------------------------------------------------------------
+   * 1. RAW PALETTE
+   * Never reference these directly in components — use the semantic aliases.
+   * -------------------------------------------------------------------------- */
+
+  /* Ink — warm near-blacks for text and dark surfaces */
+  --st-ink-950: #0d0a07;
+  --st-ink-900: #14100b;
+  --st-ink-800: #1f1a13;
+  --st-ink-700: #332c22;
+  --st-ink-600: #4a4136;
+  --st-ink-500: #6b6153;
+  --st-ink-400: #8d8272;
+  --st-ink-300: #b0a695;
+
+  /* Forest — the brand hue */
+  --st-forest-950: #071710;
+  --st-forest-900: #0b2018;
+  --st-forest-800: #0f2b1f;
+  --st-forest-700: #14432f;
+  --st-forest-600: #1b5e43;
+  --st-forest-500: #24764f;
+  --st-forest-400: #3d8f66;
+  --st-forest-300: #6ba98a;
+  --st-forest-200: #a7cdb9;
+  --st-forest-100: #d7e8e0;
+
+  /* Gold — accent, thin rules, focus, highlights */
+  --st-gold-700: #8a6712;
+  --st-gold-600: #a8801a;
+  --st-gold-500: #c9a227;
+  --st-gold-400: #dfbe55;
+  --st-gold-300: #ecd489;
+  --st-gold-100: #f7ecc9;
+
+  /* Clay — warm secondary used for sale/offer states and secondary CTAs */
+  --st-clay-700: #8f3f20;
+  --st-clay-600: #b4522c;
+  --st-clay-500: #c9683c;
+  --st-clay-300: #e5a582;
+  --st-clay-100: #f8e2d6;
+
+  /* Paper — light surfaces */
+  --st-paper-50: #fdfbf7;
+  --st-paper-100: #f9f5ed;
+  --st-paper-200: #f2ece0;
+  --st-paper-300: #e7decb;
+  --st-paper-400: #d5c9b0;
+
+  /* Alert colours (also used for status badges in the Leads admin) */
+  --st-danger-600: #a4321f;
+  --st-danger-100: #fbe4de;
+  --st-success-600: #1c6b45;
+  --st-success-100: #ddefe4;
+  --st-warning-600: #96701a;
+  --st-warning-100: #f7eecd;
+  --st-info-600: #1f5673;
+  --st-info-100: #dceaf2;
+
+  /* Pure */
+  --st-white: #fff;
+  --st-black: #000;
+
+  /* --------------------------------------------------------------------------
+   * 2. SEMANTIC COLOUR
+   * -------------------------------------------------------------------------- */
+
+  --color-bg: var(--st-paper-50);
+  --color-bg-subtle: var(--st-paper-100);
+  --color-bg-sunken: var(--st-paper-200);
+  --color-bg-elevated: var(--st-white);
+  --color-bg-inverse: var(--st-forest-900);
+  --color-bg-brand: var(--st-forest-700);
+  --color-bg-gold: var(--st-gold-500);
+  --color-text: var(--st-ink-900);
+  --color-text-muted: var(--st-ink-600);
+  --color-text-subtle: var(--st-ink-500);
+  --color-text-inverse: var(--st-paper-50);
+  --color-text-inverse-muted: rgb(253 251 247 / 0.72);
+  --color-text-brand: var(--st-forest-600);
+  --color-border: var(--st-paper-300);
+  --color-border-subtle: var(--st-paper-200);
+  --color-border-strong: var(--st-ink-300);
+  --color-border-gold: var(--st-gold-500);
+  --color-border-inverse: rgb(253 251 247 / 0.16);
+  --color-brand: var(--st-forest-600);
+  --color-brand-hover: var(--st-forest-700);
+  --color-brand-active: var(--st-forest-800);
+  --color-brand-soft: var(--st-forest-100);
+  --color-accent: var(--st-gold-600);
+  --color-accent-hover: var(--st-gold-700);
+  --color-accent-soft: var(--st-gold-100);
+  --color-accent-text: var(--st-gold-700);
+  --color-focus: var(--st-gold-500);
+
+  /* Text written on top of gold or clay fills */
+  --color-on-accent: var(--st-ink-950);
+
+  /* --------------------------------------------------------------------------
+   * 3. TYPOGRAPHY
+   * -------------------------------------------------------------------------- */
+
+  --font-body: var(--wp--preset--font-family--body, "Inter"), system-ui,
+    -apple-system, "Segoe UI", sans-serif;
+  --font-heading: var(--wp--preset--font-family--heading, "Playfair Display"),
+    georgia, "Times New Roman", serif;
+
+  /* Fluid type scale — 360px → 1440px viewport */
+  --text-2xs: 0.6875rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 1rem;
+  --text-md: clamp(1.0625rem, 1.03rem + 0.16vw, 1.125rem);
+  --text-lg: clamp(1.125rem, 1.07rem + 0.28vw, 1.25rem);
+  --text-xl: clamp(1.25rem, 1.16rem + 0.44vw, 1.5rem);
+  --text-2xl: clamp(1.5rem, 1.32rem + 0.9vw, 2rem);
+  --text-3xl: clamp(1.875rem, 1.57rem + 1.53vw, 2.75rem);
+  --text-4xl: clamp(2.25rem, 1.76rem + 2.45vw, 3.75rem);
+  --text-5xl: clamp(2.75rem, 1.9rem + 4.25vw, 5.5rem);
+  --text-6xl: clamp(3.25rem, 1.9rem + 6.75vw, 8rem);
+  --leading-none: 1;
+  --leading-tight: 1.12;
+  --leading-snug: 1.28;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.68;
+  --leading-loose: 1.85;
+  --tracking-none: 0;
+  --tracking-wide: 0.02em;
+  --tracking-wider: 0.06em;
+  --tracking-widest: 0.16em;
+
+  /* Editorial serif headings want slightly negative tracking at large sizes */
+  --tracking-display: -0.02em;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-black: 800;
+
+  /* --------------------------------------------------------------------------
+   * 4. SPACE — 4px base grid
+   * -------------------------------------------------------------------------- */
+
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2rem;
+  --space-xl: 3rem;
+  --space-2xl: 4rem;
+  --space-3xl: 6rem;
+  --space-4xl: 8rem;
+
+  /* Vertical rhythm for full-bleed sections */
+  --section-y: clamp(3.5rem, 2.4rem + 5.5vw, 7.5rem);
+  --section-y-tight: clamp(2.5rem, 1.9rem + 3vw, 4.5rem);
+
+  /* --------------------------------------------------------------------------
+   * 5. LAYOUT
+   * -------------------------------------------------------------------------- */
+
+  --container: 75rem;
+  --container-narrow: 48rem;
+  --container-wide: 90rem;
+  --container-text: 42rem;
+  --gutter: clamp(1.25rem, 0.9rem + 1.75vw, 2.5rem);
+  --grid-gap: clamp(1.25rem, 1rem + 1.25vw, 2rem);
+  --header-height: 4.5rem;
+  --header-height-scrolled: 4rem;
+
+  /* --------------------------------------------------------------------------
+   * 6. RADIUS
+   * -------------------------------------------------------------------------- */
+
+  --radius-none: 0;
+  --radius-xs: 3px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
+  --radius-pill: 999px;
+  --radius-circle: 50%;
+
+  /* --------------------------------------------------------------------------
+   * 7. ELEVATION — warm-tinted so shadows never read as cold grey
+   * -------------------------------------------------------------------------- */
+
+  --shadow-xs: 0 1px 2px rgb(20 16 11 / 0.06);
+  --shadow-sm: 0 2px 6px rgb(20 16 11 / 0.06), 0 1px 2px rgb(20 16 11 / 0.04);
+  --shadow-md: 0 6px 16px rgb(20 16 11 / 0.08), 0 2px 4px rgb(20 16 11 / 0.04);
+  --shadow-lg: 0 16px 36px rgb(20 16 11 / 0.1), 0 4px 10px rgb(20 16 11 / 0.05);
+  --shadow-xl: 0 32px 64px rgb(20 16 11 / 0.14), 0 8px 20px rgb(20 16 11 / 0.06);
+  --shadow-inset: inset 0 1px 0 rgb(255 255 255 / 0.6);
+
+  /* Dark surfaces need a lighter, deeper shadow to separate from the page */
+  --shadow-dark-sm: 0 2px 8px rgb(0 0 0 / 0.24);
+  --shadow-dark-md: 0 10px 30px rgb(0 0 0 / 0.3);
+  --shadow-dark-lg: 0 24px 60px rgb(0 0 0 / 0.38);
+
+  /* --------------------------------------------------------------------------
+   * 8. OVERLAYS
+   * -------------------------------------------------------------------------- */
+
+  --scrim: rgb(11 32 24 / 0.55);
+  --scrim-strong: rgb(11 32 24 / 0.78);
+  --hero-veil: linear-gradient(
+    180deg,
+    rgb(7 23 16 / 0.28) 0%,
+    rgb(7 23 16 / 0.12) 34%,
+    rgb(7 23 16 / 0.55) 76%,
+    rgb(7 23 16 / 0.86) 100%
+  );
+  --glass-bg: rgb(253 251 247 / 0.82);
+  --glass-border: rgb(253 251 247 / 0.6);
+  --glass-blur: 14px;
+
+  /* --------------------------------------------------------------------------
+   * 9. MOTION
+   * Durations and easings are shared so the whole site feels like one hand.
+   * -------------------------------------------------------------------------- */
+
+  --dur-instant: 90ms;
+  --dur-fast: 160ms;
+  --dur-base: 260ms;
+  --dur-slow: 420ms;
+  --dur-slower: 680ms;
+  --dur-deliberate: 1000ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+  --ease-out-soft: cubic-bezier(0.33, 1, 0.68, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Stagger step used by JS-driven reveal groups */
+  --stagger: 70ms;
+
+  /* --------------------------------------------------------------------------
+   * 10. Z-INDEX
+   * -------------------------------------------------------------------------- */
+
+  --z-base: 1;
+  --z-raised: 10;
+  --z-sticky: 100;
+  --z-header: 200;
+  --z-drawer: 300;
+  --z-overlay: 400;
+  --z-modal: 500;
+  --z-toast: 600;
+  --z-skip-link: 700;
+
+  /* --------------------------------------------------------------------------
+   * 11. COMPONENT DEFAULTS
+   * -------------------------------------------------------------------------- */
+
+  --border-width: 1px;
+  --border-width-thick: 2px;
+
+  /* Image treatments */
+  --image-ratio: 16 / 10;
+  --image-ratio-portrait: 4 / 5;
+  --image-ratio-square: 1;
+  --image-ratio-wide: 21 / 9;
+
+  /* Aspect ratios that only apply on large viewports */
+  --image-ratio-landscape: 3 / 2;
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 3px;
+}
+
+/* --------------------------------------------------------------------------
+ * Reduced motion: collapse every token-based duration to ~0 so any
+ * `transition: var(--dur-*)` anywhere resolves to instant.
+ * The JS engine separately checks the media query and skips work entirely.
+ * -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-instant: 1ms;
+    --dur-fast: 1ms;
+    --dur-base: 1ms;
+    --dur-slow: 1ms;
+    --dur-slower: 1ms;
+    --dur-deliberate: 1ms;
+    --stagger: 0ms;
+  }
+}

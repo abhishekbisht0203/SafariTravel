@@ -1,9 +1,14 @@
 {
   "name": "safari-travel/safari-travel",
-  "description": "Composer-managed PHP dependencies and autoloading for Safari Travel custom plugins.",
+  "description": "WordPress core + PHP dependencies and autoloading for the Safari Travel custom plugins and theme.",
   "type": "project",
+  "license": "GPL-2.0-or-later",
   "require": {
-    "php": "^8.2"
+    "php": "^8.2",
+    "ext-json": "*",
+    "composer/installers": "^2.3",
+    "johnpbloch/wordpress-core-installer": "^2.0",
+    "roots/wordpress-no-content": "6.7.9"
   },
   "require-dev": {
     "squizlabs/php_codesniffer": "^3.9",
@@ -23,18 +28,46 @@
     }
   },
   "scripts": {
+    "setup": "php scripts/safari.php setup",
+    "doctor": "php scripts/safari.php doctor",
+    "serve": "php scripts/safari.php start",
+    "db:check": "php scripts/safari.php db-check",
+    "wp": "php scripts/safari.php wp",
+    "seed": "php scripts/safari.php seed",
+    "reset": "php scripts/safari.php reset",
     "phpcs": "phpcs --standard=.phpcs.xml",
     "phpcbf": "phpcbf --standard=.phpcs.xml",
     "test": "phpunit --config phpunit.xml",
-    "lint": "@phpcs"
+    "lint": "@phpcs",
+    "check": [
+      "@phpcs",
+      "@test",
+      "@build"
+    ]
   },
   "config": {
     "allow-plugins": {
-      "dealerdirect/phpcodesniffer-composer-installer": true
-    }
+      "composer/installers": true,
+      "dealerdirect/phpcodesniffer-composer-installer": true,
+      "johnpbloch/wordpress-core-installer": true
+    },
+    "sort-packages": true
   },
   "extra": {
-    "phpcodesniffer-search-depth": 5
+    "phpcodesniffer-search-depth": 5,
+    "installer-paths": {
+      "wordpress/{$name}/": [
+        "type:wordpress-core"
+      ],
+      "wordpress/wp-content/plugins/{$name}/": [
+        "type:wordpress-plugin"
+      ],
+      "wordpress/wp-content/mu-plugins/{$name}/": [
+        "type:wordpress-muplugin"
+      ],
+      "wordpress/wp-content/themes/{$name}/": [
+        "type:wordpress-theme"
+      ]
+    }
   }
 }
-

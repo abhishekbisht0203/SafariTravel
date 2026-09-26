@@ -1,0 +1,516 @@
+/**
+ * ============================================================================
+ * SAFARI TRAVEL — BASE
+ * Reset, element defaults, typography, forms, accessibility primitives.
+ * ============================================================================
+ */
+
+/* --------------------------------------------------------------------------
+ * Reset
+ * -------------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  /* Anchor links clear the sticky header. */
+  scroll-padding-top: calc(var(--header-height) + var(--space-lg));
+  /* Prevent layout shift when a scrollbar appears/disappears. */
+  scrollbar-gutter: stable;
+  font-size: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  font-weight: var(--weight-regular);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizespeed;
+  /* Prevent long words breaking layout on narrow phones. */
+  overflow-wrap: break-word;
+}
+
+body.is-locked {
+  overflow: hidden;
+}
+
+main {
+  display: block;
+}
+
+hr {
+  height: 1px;
+  margin: var(--space-lg) 0;
+  padding: 0;
+  border: 0;
+  background-color: var(--color-border);
+}
+
+figure {
+  margin: 0;
+}
+
+blockquote {
+  margin: 0;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+}
+
+img,
+picture,
+video,
+canvas,
+svg,
+iframe {
+  display: block;
+  max-width: 100%;
+}
+
+img,
+video {
+  height: auto;
+}
+
+svg {
+  fill: currentcolor;
+  vertical-align: middle;
+}
+
+/* --------------------------------------------------------------------------
+ * Headings
+ * -------------------------------------------------------------------------- */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0 0 var(--space-sm);
+  font-family: var(--font-heading);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-display);
+  color: var(--color-text);
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: var(--text-4xl);
+  line-height: var(--leading-none);
+}
+
+h2 {
+  font-size: var(--text-3xl);
+}
+
+h3 {
+  font-size: var(--text-2xl);
+  line-height: var(--leading-snug);
+}
+
+h4 {
+  font-size: var(--text-xl);
+  line-height: var(--leading-snug);
+}
+
+h5 {
+  font-size: var(--text-lg);
+}
+
+h6 {
+  font-size: var(--text-base);
+  font-family: var(--font-body);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+
+p {
+  margin: 0 0 var(--space-sm);
+  text-wrap: pretty;
+}
+
+p:last-child {
+  margin-bottom: 0;
+}
+
+strong,
+b {
+  font-weight: var(--weight-semibold);
+}
+
+small {
+  font-size: var(--text-sm);
+}
+
+abbr[title] {
+  text-decoration: underline dotted;
+  cursor: help;
+}
+
+mark {
+  padding: 0.1em 0.3em;
+  color: var(--color-text);
+  background-color: var(--color-accent-soft);
+}
+
+code,
+kbd,
+pre,
+samp {
+  font-family: ui-monospace, "SFMono-Regular", "Cascadia Code", "Consolas",
+    monospace;
+  font-size: 0.9em;
+}
+
+/* --------------------------------------------------------------------------
+ * Links
+ * Underline-on-hover pattern: clean by default, clear on interaction.
+ * -------------------------------------------------------------------------- */
+
+a {
+  color: var(--color-brand);
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out);
+}
+
+a:hover,
+a:focus {
+  color: var(--color-brand-hover);
+}
+
+a[href^="http"]::after {
+  /* External links get an icon, except when we opt out. */
+}
+
+.link-underline {
+  position: relative;
+  display: inline-block;
+  color: var(--color-text);
+  font-weight: var(--weight-medium);
+}
+
+.link-underline::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: -2px;
+  height: 1px;
+  background-color: currentcolor;
+  transform: scaleX(0);
+  transform-origin: right center;
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+.link-underline:hover::after,
+.link-underline:focus-visible::after {
+  transform: scaleX(1);
+  transform-origin: left center;
+}
+
+.link-arrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-sm);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+
+.link-arrow::after {
+  content: "";
+  width: 1.75rem;
+  height: 1px;
+  background-color: currentcolor;
+  transition: width var(--dur-base) var(--ease-out);
+}
+
+.link-arrow:hover::after,
+.link-arrow:focus-visible::after {
+  width: 2.5rem;
+}
+
+/* --------------------------------------------------------------------------
+ * Forms
+ * -------------------------------------------------------------------------- */
+
+input,
+select,
+textarea,
+button {
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+}
+
+input[type="search"] {
+  appearance: none;
+}
+
+input[type="number"] {
+  appearance: textfield;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+select {
+  appearance: none;
+  padding-inline-end: 2.5rem;
+  /* Custom chevron, drawn in CSS to avoid an extra request. */
+  background-image: linear-gradient(45deg, rgb(0 0 0 / 0) 50%, var(--color-text-muted) 50%),
+    linear-gradient(135deg, var(--color-text-muted) 50%, rgb(0 0 0 / 0) 50%);
+  background-position: calc(100% - 20px) center, calc(100% - 14px) center;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+textarea {
+  min-height: 8rem;
+  resize: vertical;
+}
+
+button {
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+legend {
+  padding: 0;
+}
+
+/* --------------------------------------------------------------------------
+ * Accessibility primitives
+ * -------------------------------------------------------------------------- */
+
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+  border-radius: var(--radius-xs);
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.visually-hidden:not(:focus, :active) {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: fixed;
+  top: var(--space-sm);
+  left: var(--space-sm);
+  z-index: var(--z-skip-link);
+  padding: var(--space-xs) var(--space-md);
+  color: var(--st-forest-900);
+  background-color: var(--st-gold-400);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+  transform: translateY(calc(-100% - var(--space-lg)));
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+.skip-link:focus {
+  color: var(--st-forest-900);
+  transform: translateY(0);
+}
+
+[aria-hidden="true"] {
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+ * Selection & scrollbar
+ * -------------------------------------------------------------------------- */
+
+::selection {
+  color: var(--st-forest-900);
+  background-color: var(--st-gold-300);
+}
+
+* {
+  scrollbar-color: var(--st-paper-400) rgb(0 0 0 / 0);
+  scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: rgb(0 0 0 / 0);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--st-paper-400);
+  border: 3px solid var(--color-bg);
+  border-radius: var(--radius-pill);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--st-ink-300);
+}
+
+/* --------------------------------------------------------------------------
+ * Text helpers
+ * -------------------------------------------------------------------------- */
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.text-pretty {
+  text-wrap: pretty;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-inverse {
+  color: var(--color-text-inverse);
+}
+
+.text-inverse .text-muted,
+.text-muted-inverse {
+  color: var(--color-text-inverse-muted);
+}
+
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+.text-subtle {
+  color: var(--color-text-subtle);
+}
+
+.text-gold {
+  color: var(--color-accent-text);
+}
+
+.text-serif {
+  font-family: var(--font-heading);
+}
+
+.text-caps {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+}
+
+.measure {
+  max-width: var(--container-text);
+}
+
+.measure-narrow {
+  max-width: 34rem;
+}
+
+.measure-wide {
+  max-width: var(--container-narrow);
+}
+
+.lead {
+  font-size: var(--text-lg);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-muted);
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clamp-2,
+.clamp-3,
+.clamp-4 {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+}
+
+.clamp-2 {
+  -webkit-line-clamp: 2;
+}
+
+.clamp-3 {
+  -webkit-line-clamp: 3;
+}
+
+.clamp-4 {
+  -webkit-line-clamp: 4;
+}
+
+/* --------------------------------------------------------------------------
+ * Print
+ * -------------------------------------------------------------------------- */
+
+@media print {
+  .site-header,
+  .site-footer,
+  .st-drawer,
+  .st-mobile-cta,
+  .announcement,
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    font-size: 12pt;
+    background-color: var(--st-white);
+  }
+
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: var(--st-ink-500);
+  }
+}

@@ -40,5 +40,10 @@ add_filter('acf/settings/save_json', function (): string {
 });
 
 add_action('plugins_loaded', static function (): void {
-	load_plugin_textdomain('safari-core', false, dirname(plugin_basename(__FILE__)) . '/languages');
+	load_plugin_textdomain('safari-core', false, dirname(plugin_basename(SAFARI_CORE_FILE)) . '/languages');
 });
+
+// WP-CLI: `wp safari seed`
+if (defined('WP_CLI') && WP_CLI) {
+	require SAFARI_CORE_DIR . 'inc/class-safari-seed-command.php';
+}
