@@ -1,0 +1,21 @@
+[Sat Sep 26 15:45:53 2026] PHP 8.2.33 Development Server (http://localhost:8080) started
+[Sat Sep 26 15:45:58 2026] [::1]:54302 Accepted
+[Sat Sep 26 15:45:58 2026] [::1]:63740 Accepted
+[Sat Sep 26 15:46:06 2026] [::1]:54302 Closing
+[Sat Sep 26 15:46:59 2026] [::1]:63740 Closed without sending a request; it was probably just an unused speculative preconnection
+[Sat Sep 26 15:46:59 2026] [::1]:63740 Closing
+[Sat Sep 26 15:46:59 2026] [::1]:60626 Accepted
+[Sat Sep 26 15:46:59 2026] [::1]:59579 Accepted
+[Sat Sep 26 15:47:02 2026] [::1]:60626 Closing
+[Sat Sep 26 15:47:05 2026] [::1]:51982 Accepted
+[Sat Sep 26 15:47:09 2026] [::1]:59579 Closing
+[Sat Sep 26 15:47:13 2026] [::1]:51982 Closing
+[Sat Sep 26 15:47:13 2026] [::1]:53697 Accepted
+[Sat Sep 26 15:47:16 2026] [::1]:53697 Closing
+[Sat Sep 26 15:47:17 2026] [::1]:53861 Accepted
+[Sat Sep 26 15:47:17 2026] [::1]:63828 Accepted
+[Sat Sep 26 15:47:22 2026] [::1]:53861 Closing
+[Sat Sep 26 15:47:27 2026] [::1]:51879 Accepted
+[Sat Sep 26 15:47:31 2026] [::1]:63828 Closing
+[Sat Sep 26 15:49:37 2026] [::1]:51879 Closed without sending a request; it was probably just an unused speculative preconnection
+[Sat Sep 26 15:49:37 2026] [::1]:51879 Closing

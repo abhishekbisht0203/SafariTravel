@@ -108,10 +108,58 @@ $real      = realpath( $candidate );
 // linked theme/plugins (one level above the document root).
 $allowRoots = array( $docRoot, dirname( $docRoot ) );
 
+/**
+ * Hand a request to WordPress's front controller.
+ *
+ * This is the `try_files $uri $uri/ /index.php?$args` fallback that Apache and
+ * nginx use for a stock WordPress install, and the only reason pretty permalinks
+ * work at all. `/destinations/` has no directory on disk - it is a rewrite
+ * target - so without this step every permalink, archive, feed and the REST API
+ * would 404 while only `/?p=123` style URLs worked.
+ *
+ * SCRIPT_FILENAME/SCRIPT_NAME/PHP_SELF are set to the *requested* path so
+ * WordPress builds correct URLs, and the query string is left untouched so
+ * `?s=`, `?p=` and `?rest_route=` keep working.
+ *
+ * @param string $docRoot WordPress document root.
+ * @param string $uri     Requested path.
+ * @return void
+ */
+$safari_router_wordpress = static function ( string $docRoot, string $uri ): void {
+	$front = $docRoot . '/index.php';
+
+	if ( ! is_file( $front ) ) {
+		$safari_router_die( 500, "WordPress index.php not found in {$docRoot}\n" );
+	}
+
+	$_SERVER['SCRIPT_FILENAME'] = $front;
+	$_SERVER['SCRIPT_NAME']     = '/index.php';
+	$_SERVER['PHP_SELF']        = '/index.php';
+
+	chdir( $docRoot );
+	require $front;
+};
+
 if ( false === $real ) {
-	// No file at that path. If the URI looks like PHP, refuse it explicitly
-	// rather than letting WordPress guess.
-	$safari_router_die( 404, "Not found\n" );
+	/*
+	 * Nothing exists at that path. A path with a file extension is a request for
+	 * a specific asset or script that genuinely is not there, so it gets a plain
+	 * 404 rather than being handed to WordPress - that keeps a missing
+	 * stylesheet or image from being reported as, say, a missing page, and stops
+	 * WordPress from burning time on URLs it can never serve.
+	 *
+	 * An extension-less path is a permalink: hand it to WordPress, which either
+	 * matches a rewrite rule or produces its own proper 404 page.
+	 */
+	$extension = strtolower( (string) pathinfo( (string) parse_url( $uri, PHP_URL_PATH ), PATHINFO_EXTENSION ) );
+
+	if ( '' !== $extension ) {
+		$safari_router_die( 404, "Not found\n" );
+	}
+
+	$safari_router_wordpress( $docRoot, $uri );
+
+	return true;
 }
 
 if ( ! $safari_router_is_allowed( $real, $allowRoots ) ) {
