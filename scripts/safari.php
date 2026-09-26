@@ -49,6 +49,8 @@ require_once __DIR__ . '/lib/WpCli.php';
 require_once __DIR__ . '/lib/Installer.php';
 require_once __DIR__ . '/lib/ApiEnv.php';
 require_once __DIR__ . '/lib/Artisan.php';
+require_once __DIR__ . '/lib/ImageManifest.php';
+require_once __DIR__ . '/lib/ImageLibrary.php';
 require_once __DIR__ . '/lib/ImageLibrary.php';
 
 Env::load( Config::envFile() );
@@ -140,6 +142,8 @@ final class Safari {
 				return $this->install();
 			case 'seed':
 				return $this->seed();
+			case 'images':
+				return $this->images();
 			case 'images':
 				return $this->images();
 			case 'start':

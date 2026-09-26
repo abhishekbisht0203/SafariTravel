@@ -173,3 +173,21 @@
 [Sat Sep 26 18:19:53 2026] [::1]:64664 Closing
 [Sat Sep 26 18:31:51 2026] [::1]:53621 Closed without sending a request; it was probably just an unused speculative preconnection
 [Sat Sep 26 18:31:51 2026] [::1]:53621 Closing
+[Sat Sep 26 18:35:24 2026] [::1]:58442 Accepted
+[Sat Sep 26 18:35:24 2026] [::1]:60375 Accepted
+[Sat Sep 26 18:35:28 2026] [::1]:58442 Closing
+[Sat Sep 26 18:45:13 2026] [::1]:60375 Closed without sending a request; it was probably just an unused speculative preconnection
+[Sat Sep 26 18:45:13 2026] [::1]:60375 Closing
+[Sat Sep 26 18:51:13 2026] [::1]:58995 Accepted
+[Sat Sep 26 18:51:13 2026] [::1]:63937 Accepted
+[Sat Sep 26 18:51:22 2026] [::1]:58995 Closing
+[Sat Sep 26 18:51:22 2026] [::1]:51910 Accepted
+[Sat Sep 26 18:51:22 2026] [::1]:63937 Closing
+[Sat Sep 26 18:51:24 2026] [::1]:51910 Closing
+[Sat Sep 26 18:56:54 2026] [::1]:49256 Accepted
+[Sat Sep 26 18:56:54 2026] [::1]:49897 Accepted
+[Sat Sep 26 18:56:58 2026] [::1]:49256 Closing
+[Sat Sep 26 18:57:03 2026] [::1]:56488 Accepted
+[Sat Sep 26 18:57:10 2026] [::1]:49897 Closing
+[Sat Sep 26 18:58:21 2026] [::1]:56488 Closed without sending a request; it was probably just an unused speculative preconnection
+[Sat Sep 26 18:58:21 2026] [::1]:56488 Closing

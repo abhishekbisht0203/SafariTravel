@@ -1,0 +1,56 @@
+{
+    "note": "Photography licences for the Safari Travel theme. Every file is stored locally and served from this site; nothing is hotlinked. Regenerate with: php scripts/safari.php images --force",
+    "generated": "2026-09-26T13:40:08+00:00",
+    "images": [
+        {
+            "id": "auth-signup",
+            "file": "assets/images/auth/auth-signup.jpg",
+            "title": "Bush Elephant Amboseli (7234313436)",
+            "creator": "Benh LIEU SONG from Torcy, France / Benh LIEU SONG",
+            "license": "BY-SA",
+            "license_url": "https://creativecommons.org/licenses/by-sa/2.0/",
+            "source": "https://commons.wikimedia.org/w/index.php?curid=29639568",
+            "used_for": "Signup page artwork"
+        },
+        {
+            "id": "guide-packing",
+            "file": "assets/images/guides/guide-packing.jpg",
+            "title": "Binocular Eschenbach Derby Compact 8x40 Ww",
+            "creator": "Isiwal",
+            "license": "BY-SA",
+            "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "source": "https://commons.wikimedia.org/w/index.php?curid=39649394",
+            "used_for": "What to pack guide"
+        },
+        {
+            "id": "guide-photography",
+            "file": "assets/images/guides/guide-photography.jpg",
+            "title": "Bush Elephant Amboseli (7234313436)",
+            "creator": "Benh LIEU SONG from Torcy, France / Benh LIEU SONG",
+            "license": "BY-SA",
+            "license_url": "https://creativecommons.org/licenses/by-sa/2.0/",
+            "source": "https://commons.wikimedia.org/w/index.php?curid=29639568",
+            "used_for": "Wildlife photography guide"
+        },
+        {
+            "id": "tour-balloon-safari",
+            "file": "assets/images/tours/tour-balloon-safari.jpg",
+            "title": "Balloons over Maasai Mara, Kenya, looking south toward Serengeti",
+            "creator": "Daniel Case",
+            "license": "BY-SA",
+            "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "source": "https://commons.wikimedia.org/w/index.php?curid=182064020",
+            "used_for": "Balloon safari itinerary"
+        },
+        {
+            "id": "tour-zebra-herd",
+            "file": "assets/images/tours/tour-zebra-herd.jpg",
+            "title": "Herd of Plains Zebras in a Caldera Landscape",
+            "creator": "Rasheedhrasheed",
+            "license": "BY-SA",
+            "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "source": "https://commons.wikimedia.org/w/index.php?curid=196208086",
+            "used_for": "Zebra itinerary"
+        }
+    ]
+}

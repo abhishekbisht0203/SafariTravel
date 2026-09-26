@@ -79,6 +79,18 @@ final class ImageLibrary {
 	private static array $cache = [];
 
 	/**
+	 * Source URLs already claimed by a slot during this run.
+	 *
+	 * Two slots must never resolve to the same photograph. Openverse happily
+	 * returns one high-ranking file for several overlapping queries, which is
+	 * how a site ends up with the same elephant on the sign-up page and the
+	 * photography guide — it looks like a bug because it is one.
+	 *
+	 * @var array<string,string> Source URL to slot id.
+	 */
+	private array $claimed = [];
+
+	/**
 	 * Every licence record collected during the run, keyed by file name.
 	 *
 	 * @var array<string,array<string,string>>
@@ -103,6 +115,10 @@ final class ImageLibrary {
 		$only     = (array) ($options['only'] ?? []);
 		$dry_run  = (bool) ($options['dry_run'] ?? false);
 		$manifest = $this->manifest();
+
+		// Seed the duplicate guard from the previous run so that re-fetching a
+		// single slot cannot hand it a photograph an untouched slot already owns.
+		$this->loadExistingCredits();
 
 		foreach ($manifest as $slot) {
 			if ($only && ! in_array($slot['id'], $only, true)) {
@@ -144,12 +160,29 @@ final class ImageLibrary {
 		}
 
 		foreach ($slot['queries'] as $query) {
-			$candidates = $this->search($query, $slot['aspect']);
+			$candidates = $this->search(
+				$query,
+				$slot['aspect'],
+				(array) ($slot['require'] ?? []),
+				[
+					'require_title' => (array) ($slot['require_title'] ?? []),
+					'exclude'       => (array) ($slot['exclude'] ?? []),
+				]
+			);
 
 			foreach ($candidates as $candidate) {
+				$source = (string) ($candidate['url'] ?? '');
+
+				// Never let two slots share one photograph.
+				if ('' !== $source && isset($this->claimed[ $source ])) {
+					continue;
+				}
+
 				$record = $this->download($candidate, $slot, $path);
 
 				if (null !== $record) {
+					$this->claimed[ (string) $record['source'] ] = $slot['id'];
+
 					$this->log[] = sprintf(
 						'  + %-26s %-6s %s',
 						$slot['id'],
@@ -172,9 +205,17 @@ final class ImageLibrary {
 	 *
 	 * @param string $query  Search terms.
 	 * @param string $aspect wide|tall|square.
+	 * @param array  $require Keyword groups; a candidate must match one term
+	 *                        from each group, or it is discarded. This is the
+	 *                        guard that stops Openverse's keyword search from
+	 *                        answering "tented camp" with a photograph of a
+	 *                        dead insect: relevance is checked against the
+	 *                        file's own title, tags and description rather
+	 *                        than trusted from the search ranking.
+	 * @param array  $options require_title, exclude.
 	 * @return array<int,array<string,mixed>> Candidates, best first.
 	 */
-	private function search(string $query, string $aspect): array {
+	private function search(string $query, string $aspect, array $require = [], array $options = []): array {
 		$url = self::ENDPOINT . '?' . http_build_query([
 			'q'             => $query,
 			'license'       => self::LICENSES,
@@ -184,9 +225,8 @@ final class ImageLibrary {
 			// Wikimedia holds the strongest safari photography and is the only
 			// source that reliably serves an unmodified original at full size.
 			'source'        => 'wikimedia',
-			'aspect_ratio'  => $aspect,
 			'size'          => 'large',
-		]);
+		] + ('any' === $aspect ? [] : ['aspect_ratio' => $aspect]));
 
 		$body = $this->get($url);
 
@@ -207,21 +247,30 @@ final class ImageLibrary {
 				continue;
 			}
 
+			if (! $this->isRelevant($row, $require, $options)) {
+				continue;
+			}
+
 			// Prefer genuine landscape compositions for wide slots: reward width
 			// and penalise extreme panoramas that crop badly in a card.
 			$ratio = $width / max(1, $height);
 			$score = $width;
 
-			if ('wide' === $aspect) {
-				if ($ratio < 1.3 || $ratio > 2.2) {
-					continue;
+			// `any` is used where the subject exists in the index mainly in one
+			// orientation. The centre-crop below still produces a usable frame,
+			// which is a better outcome than an empty slot.
+			if ('any' !== $aspect) {
+				if ('wide' === $aspect) {
+					if ($ratio < 1.3 || $ratio > 2.2) {
+						continue;
+					}
+					$score += 1500 - (int) abs(1.6 - $ratio) * 1500;
+				} elseif ('tall' === $aspect) {
+					if ($ratio < 0.7 || $ratio > 0.95) {
+						continue;
+					}
+					$score += 1500 - (int) abs(0.8 - $ratio) * 1500;
 				}
-				$score += 1500 - (int) abs(1.6 - $ratio) * 1500;
-			} elseif ('tall' === $aspect) {
-				if ($ratio < 0.7 || $ratio > 0.95) {
-					continue;
-				}
-				$score += 1500 - (int) abs(0.8 - $ratio) * 1500;
 			}
 
 			// A file with a human title beats "DSC00412".
@@ -413,6 +462,110 @@ final class ImageLibrary {
 	}
 
 	/**
+	 * Decide whether a candidate is actually about the slot's subject.
+	 *
+	 * Openverse ranks by its own similarity, which is good but not good enough:
+	 * a search for "safari tented camp Kenya" will happily return a macro
+	 * photograph of an insect if it happens to match on colour and texture.
+	 * Requiring the subject keywords to appear in the file's own metadata
+	 * turns a soft ranking into a hard contract, which is the difference
+	 * between a plausible-looking site and one that is quietly wrong.
+	 *
+	 * `require_title` is stricter than `require`: the keyword has to be in the
+	 * file's own name, not merely somewhere in a tag list. Openverse tags are
+	 * noisy enough that a photograph of a dirt road can be tagged "zebra"
+	 * because a zebra was visible somewhere in the wider frame.
+	 *
+	 * @param array $row     Openverse result row.
+	 * @param array $require List of keyword groups (OR within, AND across).
+	 * @param array $options require_title, exclude.
+	 * @return bool
+	 */
+	private function isRelevant(array $row, array $require, array $options = []): bool {
+		$title = strtolower((string) ($row['title'] ?? ''));
+
+		foreach ((array) ($options['exclude'] ?? []) as $group) {
+			foreach ((array) $group as $term) {
+				if ($this->containsWord($title, (string) $term)) {
+					return false;
+				}
+			}
+		}
+
+		foreach ((array) ($options['require_title'] ?? []) as $group) {
+			$matched = false;
+
+			foreach ((array) $group as $term) {
+				if ($this->containsWord($title, (string) $term)) {
+					$matched = true;
+
+					break;
+				}
+			}
+
+			if (! $matched) {
+				return false;
+			}
+		}
+
+		if (! $require) {
+			return true;
+		}
+
+		$parts = [];
+
+		foreach ([(string) ($row['title'] ?? ''), (string) ($row['description'] ?? '')] as $value) {
+			$parts[] = $value;
+		}
+
+		// Openverse returns `tags` as an array on some records and as a
+		// comma-separated string on others; normalise before concatenating.
+		$tags = $row['tags'] ?? [];
+
+		foreach ((array) $tags as $tag) {
+			if (is_scalar($tag)) {
+				$parts[] = (string) $tag;
+			}
+		}
+
+		$haystack = strtolower(implode(' ', $parts));
+		$haystack = ' ' . (string) preg_replace('/[^\p{L}\p{N}]+/u', ' ', $haystack) . ' ';
+
+		foreach ($require as $group) {
+			$matched = false;
+
+			foreach ((array) $group as $term) {
+				$needle = ' ' . preg_replace('/[^\p{L}\p{N}]+/u', ' ', strtolower((string) $term)) . ' ';
+
+				if ('' !== trim($needle) && str_contains($haystack, $needle)) {
+					$matched = true;
+
+					break;
+				}
+			}
+
+			if (! $matched) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Whole-word containment against a space-padded string.
+	 *
+	 * @param string $haystack Lower-cased text.
+	 * @param string $needle   Term to find.
+	 */
+	private function containsWord(string $haystack, string $needle): bool
+	{
+		$needle = ' ' . (string) preg_replace('/[^\p{L}\p{N}]+/u', ' ', strtolower($needle)) . ' ';
+
+		return '' !== trim($needle) && str_contains(' ' . $haystack . ' ', $needle);
+	}
+
+	/**
 	 * HTTP GET with a CA bundle, polite User-Agent, retries and caching.
 	 *
 	 * Only small JSON responses are cached. Image payloads are written to disk
@@ -526,6 +679,35 @@ final class ImageLibrary {
 	}
 
 	/**
+	 * Read a previous run's licence manifest.
+	 *
+	 * Existing files are left alone, so without this the run would have no idea
+	 * which photographs the untouched slots already use.
+	 */
+	private function loadExistingCredits(): void {
+		$file = $this->themeDir() . '/' . self::BASE . '/CREDITS.json';
+
+		if (! is_file($file)) {
+			return;
+		}
+
+		$json = json_decode((string) file_get_contents($file), true);
+
+		foreach ((array) ($json['images'] ?? []) as $record) {
+			if (! is_array($record)) {
+				continue;
+			}
+
+			$source = (string) ($record['source'] ?? '');
+			$id     = (string) ($record['id'] ?? '');
+
+			if ('' !== $source && '' !== $id) {
+				$this->claimed[ $source ] = $id;
+			}
+		}
+	}
+
+	/**
 	 * Write the licence manifest in both machine and human readable form.
 	 */
 	private function writeCredits(): void {
@@ -553,7 +735,7 @@ final class ImageLibrary {
 
 		$md = "# Photography credits\n\n"
 			. "All photography in `theme/assets/images/` is stored locally and served from this\n"
-			. "site — no third-party image CDN is contacted at runtime. Every file below is\n"
+			. "site ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â no third-party image CDN is contacted at runtime. Every file below is\n"
 			. "openly licensed for commercial use and modification.\n\n"
 			. "Regenerate the set with `php scripts/safari.php images --force`.\n\n";
 
@@ -564,7 +746,7 @@ final class ImageLibrary {
 				$record['title'],
 				$record['creator'],
 				$record['license'],
-				'' !== $record['license_url'] ? ' — ' . $record['license_url'] : '',
+				'' !== $record['license_url'] ? ' ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ' . $record['license_url'] : '',
 				$record['source'],
 				$record['used_for']
 			);
@@ -583,370 +765,10 @@ final class ImageLibrary {
 	/**
 	 * The image manifest.
 	 *
-	 * Each slot declares where its file is stored, the intrinsic size the
-	 * layout needs, and several search phrasings. Several phrasings matter:
-	 * Openverse's index is keyword-driven, so a second phrasing is often the
-	 * difference between a good frame and no result at all.
-	 *
 	 * @return array<int,array<string,mixed>>
+	 * @see ImageManifest::all()
 	 */
 	private function manifest(): array {
-		return [
-			/* ---------------------------------------------------------- hero */
-			[
-				'id'      => 'hero-savanna-dusk',
-				'dir'     => 'hero',
-				'width'   => 2400,
-				'height'  => 1350,
-				'aspect'  => 'wide',
-				'purpose' => 'Homepage hero background',
-				'queries' => ['serengeti sunset landscape', 'savanna sunset acacia', 'African savanna sunset'],
-			],
-			[
-				'id'      => 'hero-mara-plains',
-				'dir'     => 'hero',
-				'width'   => 2400,
-				'height'  => 1350,
-				'aspect'  => 'wide',
-				'purpose' => 'Homepage hero, alternate crop',
-				'queries' => ['Maasai Mara landscape', 'Maasai Mara plains wildebeest', 'Kenya savanna landscape'],
-			],
-			[
-				'id'      => 'hero-destination',
-				'dir'     => 'hero',
-				'width'   => 2400,
-				'height'  => 1200,
-				'aspect'  => 'wide',
-				'purpose' => 'Fallback hero for inner pages',
-				'queries' => ['Amboseli elephants Kilimanjaro', 'African elephant Kilimanjaro', 'Amboseli National Park'],
-			],
-
-			/* ------------------------------------------------- destinations */
-			[
-				'id'      => 'maasai-mara',
-				'dir'     => 'destinations',
-				'width'   => 2000,
-				'height'  => 1250,
-				'aspect'  => 'wide',
-				'purpose' => 'Maasai Mara destination',
-				'queries' => ['Maasai Mara landscape', 'Maasai Mara wildebeest', 'Maasai Mara grassland'],
-			],
-			[
-				'id'      => 'serengeti',
-				'dir'     => 'destinations',
-				'width'   => 2000,
-				'height'  => 1250,
-				'aspect'  => 'wide',
-				'purpose' => 'Serengeti destination',
-				'queries' => ['Serengeti landscape plains', 'Serengeti National Park', 'Serengeti wildebeest'],
-			],
-			[
-				'id'      => 'amboseli',
-				'dir'     => 'destinations',
-				'width'   => 2000,
-				'height'  => 1250,
-				'aspect'  => 'wide',
-				'purpose' => 'Amboseli destination',
-				'queries' => ['Amboseli Kilimanjaro elephants', 'Amboseli National Park', 'Kilimanjaro elephants Amboseli'],
-			],
-			[
-				'id'      => 'okavango-delta',
-				'dir'     => 'destinations',
-				'width'   => 2000,
-				'height'  => 1250,
-				'aspect'  => 'wide',
-				'purpose' => 'Okavango Delta destination',
-				'queries' => ['Okavango Delta', 'Okavango Delta aerial', 'Okavango mokoro'],
-			],
-			[
-				'id'     => 'greater-kruger',
-				'dir'    => 'destinations',
-				'width'  => 2000,
-				'height' => 1250,
-				'aspect' => 'wide',
-				'purpose' => 'Greater Kruger destination',
-				'queries' => ['Kruger National Park landscape', 'Kruger National Park', 'Kruger National Park elephant'],
-			],
-			[
-				'id'     => 'bwindi-forest',
-				'dir'    => 'destinations',
-				'width'  => 2000,
-				'height' => 1250,
-				'aspect' => 'wide',
-				'purpose' => 'Bwindi Impenetrable Forest destination',
-				'queries' => ['Bwindi Impenetrable Forest', 'Bwindi Impenetrable Forest Uganda', 'mountain gorilla Bwindi'],
-			],
-			[
-				'id'     => 'etosha-namibia',
-				'dir'    => 'destinations',
-				'width'  => 2000,
-				'height' => 1250,
-				'aspect' => 'wide',
-				'purpose' => 'Etosha, Namibia destination',
-				'queries' => ['Etosha National Park', 'Etosha Namibia', 'Namibia desert landscape'],
-			],
-			[
-				'id'     => 'zambezi-victoria-falls',
-				'dir'    => 'destinations',
-				'width'  => 2000,
-				'height' => 1250,
-				'aspect' => 'wide',
-				'purpose' => 'Zambezi / Victoria Falls destination',
-				'queries' => ['Victoria Falls Zambezi', 'Victoria Falls aerial', 'Zambezi River Africa'],
-			],
-			[
-				'id'     => 'akagera-rwanda',
-				'dir'    => 'destinations',
-				'width'  => 2000,
-				'height' => 1250,
-				'aspect' => 'wide',
-				'purpose' => 'Akagera, Rwanda destination',
-				'queries' => ['Akagera National Park', 'Rwanda landscape hills', 'Rwanda Akagera landscape'],
-			],
-
-			/* --------------------------------------------------------- tours */
-			[
-				'id'     => 'tour-mara-crossing',
-				'dir'    => 'tours',
-				'width'  => 1600,
-				'height' => 1000,
-				'aspect' => 'wide',
-				'purpose' => 'Mara river crossing itinerary',
-				'queries' => ['wildebeest migration river crossing', 'Mara River wildebeest', 'wildebeest migration Kenya'],
-			],
-			[
-				'id'     => 'tour-serengeti-calving',
-				'dir'    => 'tours',
-				'width'  => 1600,
-				'height' => 1000,
-				'aspect' => 'wide',
-				'purpose' => 'Serengeti itinerary',
-				'queries' => ['Serengeti wildebeest calving', 'Serengeti plains wildebeest herd', 'wildebeest herd Serengeti'],
-			],
-			[
-				'id'     => 'tour-amboseli-elephants',
-				'dir'    => 'tours',
-				'width'  => 1600,
-				'height' => 1000,
-				'aspect' => 'wide',
-				'purpose' => 'Amboseli itinerary',
-				'queries' => ['African elephant family Amboseli', 'African elephants Kilimanjaro', 'African elephant herd savanna'],
-			],
-			[
-				'id'     => 'tour-okavango-water',
-				'dir'    => 'tours',
-				'width'  => 1600,
-				'height' => 1000,
-				'aspect' => 'wide',
-				'purpose' => 'Okavango water itinerary',
-				'queries' => ['Okavango mokoro canoe', 'Okavango Delta papyrus', 'Okavango Delta channels'],
-			],
-			[
-				'id'     => 'tour-kruger-leopard',
-				'dir'    => 'tours',
-				'width'  => 1600,
-				'height' => 1000,
-				'aspect' => 'wide',
-				'purpose' => 'Kruger itinerary',
-				'queries' => ['leopard Kruger National Park', 'leopard tree Africa', 'leopard Africa wild'],
-			],
-			[
-				'id'     => 'tour-bwindi-gorilla',
-				'dir'    => 'tours',
-				'width'  => 1600,
-				'height' => 1000,
-				'aspect' => 'wide',
-				'purpose' => 'Bwindi gorilla itinerary',
-				'queries' => ['mountain gorilla Uganda', 'gorilla Bwindi', 'mountain gorilla Virunga'],
-			],
-			[
-				'id'     => 'tour-namibia-desert',
-				'dir'    => 'tours',
-				'width'  => 1600,
-				'height' => 1000,
-				'aspect' => 'wide',
-				'purpose' => 'Namibia itinerary',
-				'queries' => ['Namibia Sossusvlei dunes', 'Sossusvlei Deadvlei', 'Namibia desert dunes'],
-			],
-			[
-				'id'     => 'tour-zambezi-river',
-				'dir'    => 'tours',
-				'width'  => 1600,
-				'height' => 1000,
-				'aspect' => 'wide',
-				'purpose' => 'Zambezi itinerary',
-				'queries' => ['Zambezi river sunset', 'Victoria Falls Zimbabwe', 'Zambezi canoe Africa'],
-			],
-			[
-				'id'     => 'tour-lion-pride',
-				'dir'    => 'tours',
-				'width'  => 1600,
-				'height' => 1000,
-				'aspect' => 'wide',
-				'purpose' => 'Big cat itinerary',
-				'queries' => ['lion male Serengeti', 'lion pride savanna', 'lion Africa wildlife'],
-			],
-			[
-				'id'     => 'tour-cheetah-plains',
-				'dir'    => 'tours',
-				'width'  => 1600,
-				'height' => 1000,
-				'aspect' => 'wide',
-				'purpose' => 'Cheetah itinerary',
-				'queries' => ['cheetah Serengeti', 'cheetah Africa plains', 'cheetah hunting savanna'],
-			],
-			[
-				'id'     => 'tour-rhino-conservancy',
-				'dir'    => 'tours',
-				'width'  => 1600,
-				'height' => 1000,
-				'aspect' => 'wide',
-				'purpose' => 'Rhino itinerary',
-				'queries' => ['white rhinoceros South Africa', 'black rhinoceros Kenya', 'rhinoceros Africa wildlife'],
-			],
-			[
-				'id'     => 'tour-zebra-herd',
-				'dir'    => 'tours',
-				'width'  => 1600,
-				'height' => 1000,
-				'aspect' => 'wide',
-				'purpose' => 'Zebra itinerary',
-				'queries' => ['zebras Maasai Mara', 'zebra herd Africa plains', 'plains zebra Serengeti'],
-			],
-			[
-				'id'     => 'tour-balloon-safari',
-				'dir'    => 'tours',
-				'width'  => 1600,
-				'height' => 1000,
-				'aspect' => 'wide',
-				'purpose' => 'Balloon safari itinerary',
-				'queries' => ['hot air balloon Serengeti', 'balloon safari Africa', 'hot air balloon Kenya safari'],
-			],
-			[
-				'id'     => 'tour-tented-camp',
-				'dir'    => 'tours',
-				'width'  => 1600,
-				'height' => 1000,
-				'aspect' => 'wide',
-				'purpose' => 'Camp itinerary',
-				'queries' => ['safari tented camp Kenya', 'tented camp Africa safari', 'safari lodge Kenya'],
-			],
-
-			/* -------------------------------------------------------- guides */
-			[
-				'id'     => 'guide-packing',
-				'dir'    => 'guides',
-				'width'  => 1600,
-				'height' => 1000,
-				'aspect' => 'wide',
-				'purpose' => 'Packing guide',
-				'queries' => ['safari luggage packing', 'safari camp luggage', 'travelling Africa safari gear'],
-			],
-			[
-				'id'     => 'guide-photography',
-				'dir'    => 'guides',
-				'width'  => 1600,
-				'height' => 1000,
-				'aspect' => 'wide',
-				'purpose' => 'Photography guide',
-				'queries' => ['wildlife photographer Africa', 'photographer Serengeti', 'safari photography elephant'],
-			],
-			[
-				'id'     => 'guide-visas',
-				'dir'    => 'guides',
-				'width'  => 1600,
-				'height' => 1000,
-				'aspect' => 'wide',
-				'purpose' => 'Visa guide',
-				'queries' => ['passport visa Africa', 'East Africa visa', 'travel passport documents'],
-			],
-			[
-				'id'     => 'guide-birds',
-				'dir'    => 'guides',
-				'width'  => 1600,
-				'height' => 1000,
-				'aspect' => 'wide',
-				'purpose' => 'Birding guide',
-				'queries' => ['African lilac roller', 'African bird perched', 'southern ground hornbill'],
-			],
-			[
-				'id'     => 'guide-giraffe',
-				'dir'    => 'guides',
-				'width'  => 1600,
-				'height' => 1000,
-				'aspect' => 'wide',
-				'purpose' => 'Migration guide',
-				'queries' => ['giraffe Maasai Mara', 'giraffe Kenya savanna', 'giraffe acacia Africa'],
-			],
-
-			/* -------------------------------------------------------- events */
-			[
-				'id'     => 'event-migration',
-				'dir'    => 'events',
-				'width'  => 1600,
-				'height' => 1000,
-				'aspect' => 'wide',
-				'purpose' => 'Migration event card',
-				'queries' => ['wildebeest Serengeti migration', 'wildebeest migration Tanzania', 'Serengeti wildebeest'],
-			],
-			[
-				'id'     => 'event-gorilla-departure',
-				'dir'    => 'events',
-				'width'  => 1600,
-				'height' => 1000,
-				'aspect' => 'wide',
-				'purpose' => 'Gorilla departure event card',
-				'queries' => ['mountain gorilla forest', 'gorilla Uganda forest', 'Bwindi gorilla'],
-			],
-			[
-				'id'     => 'event-shoulder-season',
-				'dir'    => 'events',
-				'width'  => 1600,
-				'height' => 1000,
-				'aspect' => 'wide',
-				'purpose' => 'Shoulder season event card',
-				'queries' => ['Lake Nakuru flamingos', 'Rift Valley Kenya landscape', 'Kenya landscape lake'],
-			],
-
-			/* -------------------------------------------------- backgrounds */
-			[
-				'id'     => 'bg-dust-road',
-				'dir'    => 'backgrounds',
-				'width'  => 2000,
-				'height' => 1125,
-				'aspect' => 'wide',
-				'purpose' => 'Section background',
-				'queries' => ['savanna dirt road Africa', 'Kenya dirt road landscape', 'African bush road'],
-			],
-			[
-				'id'     => 'bg-acacia-silhouette',
-				'dir'    => 'backgrounds',
-				'width'  => 2000,
-				'height' => 1125,
-				'aspect' => 'wide',
-				'purpose' => 'Section background',
-				'queries' => ['acacia tree sunset Africa', 'acacia tree silhouette savanna', 'acacia tree Kenya'],
-			],
-
-			/* -------------------------------------------------- auth pages */
-			[
-				'id'     => 'auth-login',
-				'dir'    => 'auth',
-				'width'  => 1600,
-				'height' => 2000,
-				'aspect' => 'tall',
-				'purpose' => 'Login page artwork',
-				'queries' => ['giraffe portrait Africa', 'giraffe head portrait', 'giraffe Masai Mara close'],
-			],
-			[
-				'id'     => 'auth-signup',
-				'dir'    => 'auth',
-				'width'  => 1600,
-				'height' => 2000,
-				'aspect' => 'tall',
-				'purpose' => 'Signup page artwork',
-				'queries' => ['elephant portrait Africa', 'African elephant close portrait', 'elephant Amboseli'],
-			],
-		];
+		return ImageManifest::all();
 	}
 }
