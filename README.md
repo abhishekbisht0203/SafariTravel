@@ -20,7 +20,7 @@ git clone https://github.com/your-org/safari-travel.git && cd safari-travel
 
 # 2. Environment config
 cp .env.example .env
-# Edit .env if you need different ports
+# Fill in DB_HOST / DB_PASSWORD for the remote MySQL (Aiven), or use the local DB (see below)
 
 # 3. Spin up containers + first-run WordPress install
 ./scripts/setup.sh
@@ -28,7 +28,7 @@ cp .env.example .env
 
 The script:
 1. Pulls Docker images and starts the stack (`docker compose up -d`)
-2. Waits for MariaDB/WordPress to be healthy
+2. Waits for WordPress to be healthy (connected to the remote MySQL)
 3. Installs WordPress via WP-CLI (skips if already installed)
 4. Activates the three custom plugins + theme
 5. Runs the seed command (`wp safari seed`) to populate demo content
@@ -134,13 +134,21 @@ Premium plugins (ACF Pro, Relevanssi Premium) require manual activation; see `do
 
 ---
 
+## Database
+
+The site uses a managed MySQL 8 database on Aiven by default. Connection details live in `.env`, which is gitignored. Never commit them.
+To use the bundled local MariaDB instead, set `DB_HOST=db`, `DB_SSL=false`, `DB_NAME=safari_wp`, `DB_USER=safari`, `DB_PASSWORD=safari_secret`
+and start with `docker compose --profile local-db up -d`.
+
 ## Environment variables (`.env`)
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `DB_NAME` | `safari_wp` | MariaDB database name |
-| `DB_USER` | `safari` | MariaDB username |
-| `DB_PASSWORD` | `safari_secret` | MariaDB password |
+| `DB_HOST` | `db` | MySQL host **with port** (e.g. Aiven `host.aivencloud.com:17620`) |
+| `DB_NAME` | `safari_wp` | Database name (`defaultdb` on Aiven) |
+| `DB_USER` | `safari` | Database username |
+| `DB_PASSWORD` | `safari_secret` | Database password |
+| `DB_SSL` | `false` | `true` to connect over TLS (required by Aiven) |
 | `DB_PREFIX` | `stv_` | WP table prefix |
 | `WP_PORT` | `8080` | WordPress HTTP port |
 | `MAILPIT_PORT` | `8025` | Mailpit web UI port |

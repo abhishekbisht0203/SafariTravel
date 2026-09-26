@@ -1,11 +1,35 @@
 version: "3.9"
 
+# Shared DB/WordPress env for the wordpress + wpcli containers.
+# By default the site uses the remote MySQL defined by DB_HOST in .env (e.g. Aiven).
+# To use the bundled local MariaDB instead: set DB_HOST=db, DB_SSL=false and run
+# `docker compose --profile local-db up -d`.
+x-wp-env: &wp-env
+  WORDPRESS_DB_HOST: "${DB_HOST:-db}"
+  WORDPRESS_DB_NAME: "${DB_NAME:-safari_wp}"
+  WORDPRESS_DB_USER: "${DB_USER:-safari}"
+  WORDPRESS_DB_PASSWORD: "${DB_PASSWORD:-safari_secret}"
+  WORDPRESS_DB_SSL: "${DB_SSL:-false}"
+  WORDPRESS_TABLE_PREFIX: "${DB_PREFIX:-stv_}"
+  WORDPRESS_DEBUG: "${WP_DEBUG:-true}"
+  WORDPRESS_DEBUG_LOG: "true"
+  WORDPRESS_DEBUG_DISPLAY: "false"
+  WORDPRESS_CONFIG_EXTRA: |
+    define('DISALLOW_FILE_EDIT', true);
+    define('WP_CACHE', true);
+    define('WP_ENVIRONMENT_TYPE', '${WP_ENV:-local}');
+    if (filter_var(getenv_docker('WORDPRESS_DB_SSL', 'false'), FILTER_VALIDATE_BOOLEAN)) {
+      define('MYSQL_CLIENT_FLAGS', MYSQLI_CLIENT_SSL | MYSQLI_CLIENT_SSL_DONT_VERIFY_SERVER_CERT);
+    }
+
 services:
-  # ── MariaDB ────────────────────────────────────────────────────────────────
+  # ── MariaDB (optional local DB — only with `--profile local-db`) ───────────
   db:
     image: mariadb:10.11
     container_name: safari_db
     restart: unless-stopped
+    profiles:
+      - local-db
     environment:
       MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-rootsecret}"
       MYSQL_DATABASE: "${DB_NAME:-safari_wp}"
@@ -39,23 +63,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+        required: false
       redis:
         condition: service_healthy
     ports:
       - "${WP_PORT:-8080}:80"
-    environment:
-      WORDPRESS_DB_HOST: db
-      WORDPRESS_DB_NAME: "${DB_NAME:-safari_wp}"
-      WORDPRESS_DB_USER: "${DB_USER:-safari}"
-      WORDPRESS_DB_PASSWORD: "${DB_PASSWORD:-safari_secret}"
-      WORDPRESS_TABLE_PREFIX: "${DB_PREFIX:-stv_}"
-      WORDPRESS_DEBUG: "${WP_DEBUG:-true}"
-      WORDPRESS_DEBUG_LOG: "true"
-      WORDPRESS_DEBUG_DISPLAY: "false"
-      WORDPRESS_CONFIG_EXTRA: |
-        define('DISALLOW_FILE_EDIT', true);
-        define('WP_CACHE', true);
-        define('WP_ENVIRONMENT_TYPE', '${WP_ENV:-local}');
+    environment: *wp-env
     volumes:
       - wp_data:/var/www/html
       - ./theme:/var/www/html/wp-content/themes/safari-theme:cached
@@ -86,11 +99,7 @@ services:
       - ./mu-plugins:/var/www/html/wp-content/mu-plugins:cached
       - ./uploads:/var/www/html/wp-content/uploads:cached
       - ./scripts:/scripts:cached
-    environment:
-      WORDPRESS_DB_HOST: db
-      WORDPRESS_DB_NAME: "${DB_NAME:-safari_wp}"
-      WORDPRESS_DB_USER: "${DB_USER:-safari}"
-      WORDPRESS_DB_PASSWORD: "${DB_PASSWORD:-safari_secret}"
+    environment: *wp-env
     user: "33:33"
     entrypoint: ["wp", "--allow-root"]
     profiles:
