@@ -34,7 +34,7 @@ class AuthController extends Controller
         // the same amount of time.
         $password = (string) $request->validated('password');
 
-        if (null === $user || ! Hash::check($password, (string) $user->password)) {
+        if ($user === null || ! Hash::check($password, (string) $user->password)) {
             return response()->json([
                 'message' => 'These credentials do not match our records.',
             ], Response::HTTP_UNAUTHORIZED);

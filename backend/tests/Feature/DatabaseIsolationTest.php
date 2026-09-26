@@ -96,15 +96,12 @@ class DatabaseIsolationTest extends TestCase
         DB::statement('create table stv_posts (id integer primary key)');
 
         $this->assertContains('stv_posts', $this->tables());
+        $this->assertContains('safari_api_leads', $this->tables());
 
         $this->artisan('safari:wipe', ['--force' => true])->assertSuccessful();
 
-        fwrite(STDERR, "\nremaining: ".implode(', ', $this->tables())."\n");
-        fwrite(STDERR, 'prefix now: '.var_export(config('database.connections.sqlite.prefix'), true)."\n");
-
         // The WordPress table must survive; only the backend's tables go.
-        $this->assertContains('stv_posts', $this->tables());
-        $this->assertSame([], $this->tables());
+        $this->assertSame(['stv_posts'], $this->tables());
     }
 
     public function test_the_leads_schema_matches_the_wordpress_lead_table(): void

@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use App\Services\Leads\IpHasher;
 use App\Services\Spam\HoneypotDetector;
-use App\Services\Spam\TurnstileVerifier;
-use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\RateLimiter;
 use Tests\TestCase;
 
@@ -18,7 +16,7 @@ class HoneypotDetectorTest extends TestCase
 {
     private function detector(): HoneypotDetector
     {
-        return new HoneypotDetector($this->app->make(\App\Services\Leads\IpHasher::class));
+        return new HoneypotDetector($this->app->make(IpHasher::class));
     }
 
     protected function setUp(): void
@@ -138,10 +136,8 @@ class HoneypotDetectorTest extends TestCase
         $this->assertTrue($detector->isRateLimited('203.0.113.4'));
         $this->assertGreaterThan(0, $detector->availableIn('203.0.113.4'));
 
-
         $detector->clear('203.0.113.4');
 
         $this->assertFalse($detector->isRateLimited('203.0.113.4'));
     }
 }
-

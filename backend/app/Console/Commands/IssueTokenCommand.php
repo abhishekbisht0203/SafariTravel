@@ -35,7 +35,7 @@ class IssueTokenCommand extends Command
 
         $user = User::query()->where('email', $email)->first();
 
-        if (null === $user) {
+        if ($user === null) {
             $this->error('No API operator with that address. Create one with: php artisan safari:operator '.$email);
 
             return self::FAILURE;

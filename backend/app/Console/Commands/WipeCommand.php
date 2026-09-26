@@ -39,7 +39,7 @@ class WipeCommand extends Command
         $connection = (string) ($this->option('connection') ?: config('database.default'));
         $prefix = (string) config('database.connections.'.$connection.'.prefix', '');
 
-        if ('' === trim($prefix)) {
+        if (trim($prefix) === '') {
             $this->error('Refusing to run: the connection has no table prefix, so every table in the schema would match.');
             $this->error('Set DB_TABLE_PREFIX (WordPress uses a different one) and try again.');
 
@@ -54,7 +54,7 @@ class WipeCommand extends Command
 
         $tables = $this->tables($connection, $prefix);
 
-        if ([] === $tables) {
+        if ($tables === []) {
             $this->info('Nothing to wipe — no tables match the prefix "'.$prefix.'".');
 
             return self::SUCCESS;
@@ -106,7 +106,7 @@ class WipeCommand extends Command
         $database = (string) config('database.connections.'.$connection.'.database');
         $driver = (string) config('database.connections.'.$connection.'.driver');
 
-        if ('' === $database) {
+        if ($database === '') {
             return [];
         }
 
@@ -141,7 +141,7 @@ class WipeCommand extends Command
             $name = (string) ($row->name ?? $row->NAME ?? $row->table_name ?? '');
 
             // sqlite_sequence and friends are engine bookkeeping, not ours.
-            if ('' === $name || str_starts_with($name, 'sqlite_')) {
+            if ($name === '' || str_starts_with($name, 'sqlite_')) {
                 continue;
             }
 

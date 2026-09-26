@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Models\Lead;
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -17,7 +18,7 @@ class UpdateLeadStatusRequest extends FormRequest
     {
         $user = $this->user();
 
-        return $user instanceof \App\Models\User && $user->canManageLeads();
+        return $user instanceof User && $user->canManageLeads();
     }
 
     /**

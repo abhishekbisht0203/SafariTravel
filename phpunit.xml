@@ -1,4 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+    WordPress-side tests.
+
+    The Laravel backend has its own PHPUnit configuration and its own Composer
+    autoloader (backend/phpunit.xml). This suite covers the WordPress
+    application only: the theme, the plugins, the mu-plugins and the developer
+    tooling in scripts/.
+
+    Note the lowercase <testsuites> element: PHPUnit's schema is case
+    sensitive, and <testSuites> is silently ignored, which makes the whole run
+    report no tests at all.
+-->
 <phpunit
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
@@ -10,7 +22,7 @@
     beStrictAboutChangesToGlobalState="false"
     colors="true"
 >
-    <testSuites>
+    <testsuites>
         <testsuite name="Safari Leads">
             <directory>tests/safari-leads</directory>
         </testsuite>
@@ -20,7 +32,13 @@
         <testsuite name="Safari Search">
             <directory>tests/safari-search</directory>
         </testsuite>
-    </testSuites>
+        <testsuite name="API Bridge">
+            <directory>tests/api-bridge</directory>
+        </testsuite>
+        <testsuite name="Tooling">
+            <directory>tests/tooling</directory>
+        </testsuite>
+    </testsuites>
 
     <source>
         <include>

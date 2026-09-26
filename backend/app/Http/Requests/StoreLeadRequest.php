@@ -148,7 +148,7 @@ class StoreLeadRequest extends FormRequest
         foreach (['destination_id', 'tour_id', 'adults', 'children'] as $integer) {
             $value = $data[$integer] ?? null;
 
-            $data[$integer] = (null === $value || '' === $value) ? null : (int) $value;
+            $data[$integer] = ($value === null || $value === '') ? null : (int) $value;
         }
 
         if (0 === ($data['destination_id'] ?? null)) {

@@ -51,7 +51,7 @@ class WordPressClient
      */
     public function isConfigured(): bool
     {
-        return '' !== $this->normalizedBaseUrl();
+        return $this->normalizedBaseUrl() !== '';
     }
 
     /**
@@ -59,7 +59,7 @@ class WordPressClient
      */
     public function canAuthenticate(): bool
     {
-        return '' !== (string) $this->username && '' !== (string) $this->applicationPassword;
+        return (string) $this->username !== '' && (string) $this->applicationPassword !== '';
     }
 
     /**
@@ -69,7 +69,7 @@ class WordPressClient
     {
         $path = ltrim($path, '/');
 
-        return $this->normalizedBaseUrl().'/wp-json/wp/v2'.('' === $path ? '' : '/'.$path);
+        return $this->normalizedBaseUrl().'/wp-json/wp/v2'.($path === '' ? '' : '/'.$path);
     }
 
     /**
@@ -79,7 +79,7 @@ class WordPressClient
     {
         $path = ltrim($path, '/');
 
-        return $this->normalizedBaseUrl().'/wp-json/safari/v1'.('' === $path ? '' : '/'.$path);
+        return $this->normalizedBaseUrl().'/wp-json/safari/v1'.($path === '' ? '' : '/'.$path);
     }
 
     /**
@@ -93,7 +93,7 @@ class WordPressClient
     {
         $path = ltrim($path, '/');
 
-        return $this->normalizedBaseUrl().'/wp-json/safari-api/v1'.('' === $path ? '' : '/'.$path);
+        return $this->normalizedBaseUrl().'/wp-json/safari-api/v1'.($path === '' ? '' : '/'.$path);
     }
 
     /**
@@ -131,7 +131,7 @@ class WordPressClient
 
         $payload = $this->get($type.'/'.$id, $this->normaliseQuery($query));
 
-        return is_array($payload) && [] !== $payload ? $payload : null;
+        return is_array($payload) && $payload !== [] ? $payload : null;
     }
 
     /**
@@ -232,7 +232,6 @@ class WordPressClient
      * key, never with the public intake route.
      *
      * @param  array<string, mixed>  $payload
-     * @return Response
      */
     public function post(string $safariPath, array $payload = []): Response
     {
@@ -248,7 +247,6 @@ class WordPressClient
      * PATCH a resource in the custom Safari namespace.
      *
      * @param  array<string, mixed>  $payload
-     * @return Response
      */
     public function patch(string $safariPath, array $payload = []): Response
     {
@@ -358,7 +356,7 @@ class WordPressClient
         $clean = [];
 
         foreach ($query as $key => $value) {
-            if (is_array($value) || is_object($value) || null === $value || '' === $value) {
+            if (is_array($value) || is_object($value) || $value === null || $value === '') {
                 continue;
             }
 

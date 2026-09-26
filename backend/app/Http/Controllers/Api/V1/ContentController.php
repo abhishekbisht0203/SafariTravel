@@ -49,7 +49,7 @@ class ContentController extends Controller
     {
         $data = $this->guard(fn (): ?array => $this->content->find($type, $id, ['_embed' => 1]));
 
-        if (null === $data) {
+        if ($data === null) {
             return response()->json([
                 'message' => 'Content not found.',
             ], Response::HTTP_NOT_FOUND);

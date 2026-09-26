@@ -75,7 +75,7 @@ return [
                     env('DB_SSL_VERIFY', true),
                     FILTER_VALIDATE_BOOLEAN
                 ) || null,
-            ], static fn ($value): bool => null !== $value) : [],
+            ], static fn ($value): bool => $value !== null) : [],
         ],
 
         'mariadb' => [
@@ -99,7 +99,7 @@ return [
                     env('DB_SSL_VERIFY', true),
                     FILTER_VALIDATE_BOOLEAN
                 ) || null,
-            ], static fn ($value): bool => null !== $value) : [],
+            ], static fn ($value): bool => $value !== null) : [],
         ],
 
         'pgsql' => [

@@ -8,7 +8,13 @@
 declare(strict_types=1);
 
 // ── Composer autoloader ────────────────────────────────────────────────────
+//
+// Provides both `Safari\Tooling\` (scripts/lib) and, in development, the
+// `Safari\Tests\` namespace that holds the test-support classes.
 require_once dirname(__DIR__) . '/vendor/autoload.php';
+
+// ── Test support classes ───────────────────────────────────────────────────
+require_once __DIR__ . '/Support/WordPressTestCase.php';
 
 // ── Brain\Monkey WordPress stubs ───────────────────────────────────────────
 use Brain\Monkey;
@@ -39,4 +45,11 @@ define('SAFARI_CORE_DIR', dirname(__DIR__) . '/plugins/safari-core/');
 // Stub WP_Error for unit tests.
 if (! class_exists('WP_Error')) {
     require_once __DIR__ . '/_stubs/class-wp-error.php';
+}
+
+// Stub the REST verb constants the mu-plugin references. Only the verbs the
+// bridge actually uses are needed; a missing one should fail loudly rather than
+// default to something wrong.
+if (! class_exists('WP_REST_Server')) {
+    require_once __DIR__ . '/_stubs/class-wp-rest-server.php';
 }

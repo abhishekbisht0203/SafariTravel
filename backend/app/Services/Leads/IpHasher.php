@@ -22,7 +22,7 @@ final class IpHasher
     {
         $ip = trim((string) ($ip ?? request()->ip()));
 
-        if ('' === $ip) {
+        if ($ip === '') {
             return null;
         }
 
@@ -31,14 +31,14 @@ final class IpHasher
         // Without a salt every deployment would produce identical hashes for the
         // same address, which is worse than storing nothing. Fall back to the
         // application key, and if even that is missing, refuse to hash.
-        if ('' === $salt) {
+        if ($salt === '') {
             $salt = (string) config('app.key');
         }
 
-        if ('' === $salt) {
+        if ($salt === '') {
             return null;
         }
 
-        return hash('sha256', $ip . $salt);
+        return hash('sha256', $ip.$salt);
     }
 }

@@ -131,9 +131,13 @@ final class Safari_API_Bridge {
 	/**
 	 * Constant-time shared-secret check.
 	 *
+	 * WordPress accepts `true` or a WP_Error from a permission callback; the
+	 * error is what produces the 401 body, so returning false instead would
+	 * leak a generic "rest_forbidden" with no explanation.
+	 *
 	 * @return true|WP_Error
 	 */
-	public static function authorize(): bool {
+	public static function authorize(): bool|WP_Error {
 		$provided = (string) ( $_SERVER['HTTP_X_SAFARI_API_KEY'] ?? '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 
 		if ( '' === $provided || ! hash_equals( self::shared_key(), $provided ) ) {

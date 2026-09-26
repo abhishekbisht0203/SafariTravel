@@ -20,7 +20,9 @@
     "mockery/mockery": "^1.6"
   },
   "autoload": {
-    "psr-4": {}
+    "psr-4": {
+      "Safari\\Tooling\\": "scripts/lib/"
+    }
   },
   "autoload-dev": {
     "psr-4": {
@@ -35,13 +37,26 @@
     "wp": "php scripts/safari.php wp",
     "seed": "php scripts/safari.php seed",
     "reset": "php scripts/safari.php reset",
+    "api:install": "php scripts/safari.php api-install",
+    "api:env": "php scripts/safari.php api-env",
+    "api:serve": "php scripts/safari.php api-start",
+    "api:status": "php scripts/safari.php api-status",
+    "api": "php scripts/safari.php api",
+    "api:test": "php scripts/safari.php api-test",
     "phpcs": "phpcs --standard=.phpcs.xml",
     "phpcbf": "phpcbf --standard=.phpcs.xml",
+    "lint:syntax": "php scripts/lint-php.php",
     "test": "phpunit --config phpunit.xml",
-    "lint": "@phpcs",
+    "test:api": "@api:test",
+    "lint": [
+      "@lint:syntax",
+      "@phpcs"
+    ],
+    "build": "npm run build",
     "check": [
-      "@phpcs",
+      "@lint:syntax",
       "@test",
+      "@api:test",
       "@build"
     ]
   },

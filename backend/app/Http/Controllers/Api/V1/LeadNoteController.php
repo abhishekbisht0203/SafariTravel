@@ -9,7 +9,6 @@ use App\Http\Requests\StoreLeadNoteRequest;
 use App\Http\Resources\LeadNoteResource;
 use App\Models\Lead;
 use App\Services\Leads\LeadService;
-use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Operator notes on a lead.

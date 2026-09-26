@@ -54,7 +54,7 @@ class CreateOperatorCommand extends Command
             return self::FAILURE;
         }
 
-        $generated = '' === (string) $this->option('password');
+        $generated = (string) $this->option('password') === '';
         $password = $generated ? $this->generatePassword() : (string) $this->option('password');
 
         if (mb_strlen($password) < 12) {
@@ -67,7 +67,7 @@ class CreateOperatorCommand extends Command
 
         if ($user) {
             $user->fill([
-                'name' => '' !== $name ? $name : $user->name,
+                'name' => $name !== '' ? $name : $user->name,
                 'role' => $role,
                 'password' => Hash::make($password),
             ])->save();
@@ -75,7 +75,7 @@ class CreateOperatorCommand extends Command
             $this->info('Updated existing operator '.$email.' (role: '.$role.').');
         } else {
             User::query()->create([
-                'name' => '' !== $name ? $name : Str::before($email, '@'),
+                'name' => $name !== '' ? $name : Str::before($email, '@'),
                 'email' => $email,
                 'role' => $role,
                 'password' => Hash::make($password),

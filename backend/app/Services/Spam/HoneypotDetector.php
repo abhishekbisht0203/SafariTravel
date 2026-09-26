@@ -36,7 +36,7 @@ final class HoneypotDetector
     {
         $field = (string) config('safari.leads.spam.honeypot_field', 'website');
 
-        return '' !== trim((string) ($payload[$field] ?? ''));
+        return trim((string) ($payload[$field] ?? '')) !== '';
     }
 
     /**
@@ -46,7 +46,7 @@ final class HoneypotDetector
     {
         $minimum = (int) config('safari.leads.min_submit_seconds', 3);
 
-        if ($minimum <= 0 || null === $submittedAt || $submittedAt <= 0) {
+        if ($minimum <= 0 || $submittedAt === null || $submittedAt <= 0) {
             return false;
         }
 

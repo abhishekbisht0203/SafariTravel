@@ -8,6 +8,7 @@ use App\Services\Spam\TurnstileVerifier;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
+
 /**
  * Turnstile verification.
  */
@@ -91,4 +92,3 @@ class TurnstileVerifierTest extends TestCase
         Http::assertSent(fn ($request): bool => $request['remoteip'] === '203.0.113.55');
     }
 }
-

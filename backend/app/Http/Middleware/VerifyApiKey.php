@@ -24,7 +24,7 @@ class VerifyApiKey
     {
         $expected = trim((string) config('safari.api.key', ''));
 
-        if ('' === $expected) {
+        if ($expected === '') {
             return response()->json([
                 'message' => 'The API bridge is disabled because SAFARI_API_KEY is not configured.',
             ], Response::HTTP_NOT_FOUND);
@@ -33,7 +33,7 @@ class VerifyApiKey
         $header = (string) config('safari.api.header', 'X-Safari-Api-Key');
         $provided = trim((string) $request->header($header, ''));
 
-        if ('' === $provided || ! hash_equals($expected, $provided)) {
+        if ($provided === '' || ! hash_equals($expected, $provided)) {
             return response()->json([
                 'message' => 'Invalid or missing API key.',
             ], Response::HTTP_UNAUTHORIZED);

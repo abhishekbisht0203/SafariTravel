@@ -31,7 +31,7 @@ class RevokeTokenCommand extends Command
 
         $user = User::query()->where('email', $email)->first();
 
-        if (null === $user) {
+        if ($user === null) {
             $this->error('No API operator with that address.');
 
             return self::FAILURE;
@@ -41,13 +41,13 @@ class RevokeTokenCommand extends Command
 
         $query = $user->tokens();
 
-        if (! $this->option('all') && '' !== (string) $name) {
+        if (! $this->option('all') && (string) $name !== '') {
             $query->where('name', (string) $name);
         }
 
         $count = (clone $query)->count();
 
-        if (0 === $count) {
+        if ($count === 0) {
             $this->warn('No matching tokens to revoke.');
 
             return self::SUCCESS;

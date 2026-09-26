@@ -8,6 +8,7 @@ use App\Services\WordPress\ContentRepository;
 use App\Services\WordPress\WordPressClient;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
+
 class ContentRepositoryTest extends TestCase
 {
     private function repository(): ContentRepository
@@ -72,4 +73,3 @@ class ContentRepositoryTest extends TestCase
         $this->assertNull($this->repository()->permalink('destination', 4242));
     }
 }
-

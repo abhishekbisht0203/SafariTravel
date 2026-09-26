@@ -14,6 +14,19 @@
 .env.local
 .env.*.local
 
+# Laravel API (backend/)
+# Dependencies and generated files are installed/produced by its own Composer
+# file and its own .env.
+/backend/vendor/
+/backend/.env
+/backend/.env.local
+/backend/.env.*.local
+/backend/bootstrap/cache/*.php
+/backend/storage/framework/cache/data/*
+/backend/storage/framework/sessions/*
+/backend/storage/framework/views/*
+/backend/storage/logs/*.log
+
 # ── WordPress core ───────────────────────────────────────────────────────────
 # Installed by Composer (roots/wordpress-no-content, pinned in composer.json).
 # wp-config.php, wp-config-salts.php, wp-content and the linked theme/plugins

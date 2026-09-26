@@ -33,7 +33,7 @@ class LeadAutoReply extends Notification
     {
         $body = (string) config('safari.leads.auto_reply.template', '');
 
-        if ('' === $body) {
+        if ($body === '') {
             $body = implode("\n\n", [
                 'Hi {name},',
                 'Thanks for getting in touch. We have received your enquiry and one of our '
@@ -71,7 +71,7 @@ class LeadAutoReply extends Notification
     {
         $lines = array_values(array_filter(
             array_map('trim', preg_split('/\R/', trim($body)) ?: []),
-            static fn (string $line): bool => '' !== $line,
+            static fn (string $line): bool => $line !== '',
         ));
 
         return trim(implode("\n", array_slice($lines, 1, -1)));
@@ -81,7 +81,7 @@ class LeadAutoReply extends Notification
     {
         $lines = array_values(array_filter(
             array_map('trim', preg_split('/\R/', trim($body)) ?: []),
-            static fn (string $line): bool => '' !== $line,
+            static fn (string $line): bool => $line !== '',
         ));
 
         $last = (string) (end($lines) ?: '');

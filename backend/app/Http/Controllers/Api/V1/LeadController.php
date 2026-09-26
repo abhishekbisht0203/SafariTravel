@@ -58,6 +58,6 @@ class LeadController extends Controller
     {
         $wordpress = rtrim((string) config('safari.wordpress.url', ''), '/');
 
-        return '' !== $wordpress ? $wordpress.'/thank-you/' : url('/thank-you/');
+        return $wordpress !== '' ? $wordpress.'/thank-you/' : url('/thank-you/');
     }
 }

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Jobs\AnonymiseExpiredLeads;
 use Illuminate\Support\Facades\Schedule;
 
 /*
@@ -20,7 +21,7 @@ use Illuminate\Support\Facades\Schedule;
 |
 */
 
-Schedule::job(new App\Jobs\AnonymiseExpiredLeads)
+Schedule::job(new AnonymiseExpiredLeads)
     ->dailyAt('03:17')
     ->name('safari:lead-retention')
     ->withoutOverlapping();

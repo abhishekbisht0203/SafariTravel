@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Database\Factories\LeadNoteFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * A timestamped entry in a lead's history.
@@ -18,12 +20,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $user_id
  * @property string $type
  * @property string $content
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class LeadNote extends Model
 {
-    /** @use HasFactory<\Database\Factories\LeadNoteFactory> */
+    /** @use HasFactory<LeadNoteFactory> */
     use HasFactory;
 
     public const TYPE_NOTE = 'note';

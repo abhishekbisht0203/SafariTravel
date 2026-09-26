@@ -68,7 +68,7 @@ class LeadService
                     'Status changed from %s to %s.%s',
                     $from,
                     $status,
-                    '' !== (string) $reason ? ' Reason: '.$reason : ''
+                    (string) $reason !== '' ? ' Reason: '.$reason : ''
                 )),
             ]);
         });
@@ -124,7 +124,7 @@ class LeadService
             return;
         }
 
-        if (null === $lead->wordpress_lead_id) {
+        if ($lead->wordpress_lead_id === null) {
             return;
         }
 

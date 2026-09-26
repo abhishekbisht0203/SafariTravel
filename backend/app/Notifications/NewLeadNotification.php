@@ -18,7 +18,7 @@ class NewLeadNotification extends Notification
 
     /**
      * @param  list<string>  $recipients  Everyone the alert went to, so the
-     *                                   operator can see who else is in the loop.
+     *                                    operator can see who else is in the loop.
      */
     public function __construct(
         public readonly Lead $lead,
@@ -64,7 +64,7 @@ class NewLeadNotification extends Notification
 
         $message->line('Lead ID: '.$this->lead->id);
 
-        if ([] !== $this->recipients) {
+        if ($this->recipients !== []) {
             $message->line('Sent to: '.implode(', ', $this->recipients));
         }
 

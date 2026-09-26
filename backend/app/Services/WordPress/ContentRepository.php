@@ -70,7 +70,7 @@ final class ContentRepository
     {
         $post = $this->client->item($type, $id, $query);
 
-        return null === $post ? null : $this->project($post);
+        return $post === null ? null : $this->project($post);
     }
 
     /**
@@ -94,7 +94,7 @@ final class ContentRepository
 
         $link = (string) ($post['link'] ?? '');
 
-        return '' !== $link ? $link : null;
+        return $link !== '' ? $link : null;
     }
 
     /**
@@ -139,6 +139,6 @@ final class ContentRepository
 
         $source = $media['source_url'] ?? null;
 
-        return is_string($source) && '' !== $source ? $source : null;
+        return is_string($source) && $source !== '' ? $source : null;
     }
 }

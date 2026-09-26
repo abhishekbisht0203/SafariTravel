@@ -158,6 +158,8 @@ final class Safari {
 				return $this->apiStatus();
 			case 'api':
 				return Artisan::run( $this->args );
+			case 'api-test':
+				return $this->apiTest();
 			case 'help':
 			case '--help':
 			case '-h':
@@ -995,6 +997,36 @@ final class Safari {
 		return $code;
 	}
 
+	/**
+	 * Run the Laravel test suite.
+	 *
+	 * The API has its own Composer autoloader and its own PHPUnit configuration,
+	 * so it is deliberately invoked from backend/ rather than folded into the
+	 * WordPress suite: a Laravel failure must not be reported as a WordPress
+	 * failure and vice versa.
+	 *
+	 * @return int
+	 */
+	private function apiTest(): int {
+		$phpunit = Config::apiDir() . '/vendor/phpunit/phpunit/phpunit';
+
+		if ( ! is_file( $phpunit ) ) {
+			Console::error( 'backend/vendor is missing. Run: php scripts/safari.php api-install' );
+
+			return 1;
+		}
+
+		// vendor/bin/phpunit is a shell script with a .bat companion, so it cannot
+		// be executed directly on Windows. The real entry point is plain PHP.
+		$arguments = array( self::phpBinary(), $phpunit );
+
+		if ( ! empty( $this->args ) ) {
+			$arguments = array_merge( $arguments, $this->args );
+		}
+
+		return Process::run( $arguments, array(), true, Config::apiDir() );
+	}
+
 	/* ---------------------------------------------------------------------
 	 * Shared helpers
 	 * ------------------------------------------------------------------ */
@@ -1452,8 +1484,13 @@ Laravel backend (backend/)
   php scripts/safari.php api-env [--force] Regenerate backend/.env from .env
   php scripts/safari.php api-start         Start the Laravel dev server on :8000
   php scripts/safari.php api-status        Show the backend's environment/drivers
+  php scripts/safari.php api-test [args]   Run the backend's PHPUnit suite
   php scripts/safari.php api <args...>     Run the Laravel artisan console
                                            e.g. ... api safari:operator me@x --role=admin
+
+  The API is opt-in. With API_DELEGATE=false and API_MIRROR=false in .env the
+  Laravel application is installed and testable but takes no part in the live
+  site: the public form still goes to WordPress and nothing is mirrored.
 
 TXT );
 	}

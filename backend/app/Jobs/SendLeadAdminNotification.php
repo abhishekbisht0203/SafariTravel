@@ -6,6 +6,7 @@ namespace App\Jobs;
 
 use App\Models\Lead;
 use App\Models\LeadNote;
+use App\Models\User;
 use App\Notifications\NewLeadNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -37,14 +38,14 @@ class SendLeadAdminNotification implements ShouldQueue
     {
         $lead = Lead::find($this->leadId);
 
-        if (null === $lead || $lead->isClosed()) {
+        if ($lead === null || $lead->isClosed()) {
             // Deleted, or closed by someone else before the job ran.
             return;
         }
 
         $recipients = $this->recipients();
 
-        if ([] === $recipients) {
+        if ($recipients === []) {
             Log::warning('Lead saved but no notification recipient is configured.', [
                 'lead_id' => $lead->id,
             ]);
@@ -73,12 +74,12 @@ class SendLeadAdminNotification implements ShouldQueue
         /** @var list<string> $configured */
         $configured = (array) config('safari.leads.notify_emails', []);
 
-        if ([] !== $configured) {
+        if ($configured !== []) {
             return $configured;
         }
 
-        return \App\Models\User::query()
-            ->whereIn('role', [\App\Models\User::ROLE_ADMIN, \App\Models\User::ROLE_AGENT])
+        return User::query()
+            ->whereIn('role', [User::ROLE_ADMIN, User::ROLE_AGENT])
             ->pluck('email')
             ->all();
     }

@@ -239,15 +239,28 @@ final class Process {
 	 * @return string|null
 	 */
 	public static function locate( string $executable ): ?string {
-		$result = self::capture(
-			Console::isWindows() ? array( 'where', $executable ) : array( 'which', $executable )
-		);
+		// Deliberately bypasses normalise(): normalise() resolves executables
+		// through this method, and going back through it here would recurse
+		// forever looking up `where`/`which` themselves.
+		$command = Console::isWindows()
+			? array( 'where.exe', $executable )
+			: array( '/usr/bin/which', $executable );
+
+		$result = self::execute( $command, array(), null, false );
 
 		if ( 0 !== $result['code'] ) {
+			@unlink( $result['out_file'] );
+			@unlink( $result['err_file'] );
+
 			return null;
 		}
 
-		$lines = array_filter( array_map( 'trim', preg_split( '/\R/', $result['out'] ) ?: array() ) );
+		$out = (string) @file_get_contents( $result['out_file'] );
+
+		@unlink( $result['out_file'] );
+		@unlink( $result['err_file'] );
+
+		$lines = array_filter( array_map( 'trim', preg_split( '/\R/', $out ) ?: array() ) );
 
 		return $lines ? (string) $lines[0] : null;
 	}
@@ -255,16 +268,76 @@ final class Process {
 	/**
 	 * Prepare a command for proc_open.
 	 *
+	 * On Windows the bare name of a shim such as `composer` or `npm` cannot be
+	 * executed: what is on PATH is `composer.bat` / `npm.cmd`, and proc_open
+	 * will not append PATHEXT for an array command. A path that is an existing
+	 * PHP script is also not directly executable there. Both are resolved here
+	 * so callers can keep passing the portable, obvious form.
+	 *
 	 * @param string|string[] $command Command.
 	 * @return array{0:string}|string
 	 */
 	private static function normalise( string|array $command ): array|string {
-		if ( is_array( $command ) ) {
-			// Drop empty arguments so callers can pass optional flags freely.
-			return array_values( array_filter( array_map( 'strval', $command ), static fn (string $a): bool => '' !== $a ) );
+		if ( is_string( $command ) ) {
+			return $command;
 		}
 
-		return $command;
+		$parts = array_values( array_filter( array_map( 'strval', $command ), static fn (string $a): bool => '' !== $a ) );
+
+		if ( ! $parts ) {
+			return $parts;
+		}
+
+		$program = self::resolveExecutable( $parts[0] );
+
+		if ( null === $program ) {
+			// Run it with the interpreter, keeping the script as argv[1].
+			array_unshift( $parts, PHP_BINARY );
+		} else {
+			$parts[0] = $program;
+		}
+
+		return $parts;
+	}
+
+	/**
+	 * Turn a program name into something this platform can actually execute.
+	 *
+	 * Returns null when the program is a PHP script that has to be run through
+	 * the interpreter, so the caller can prepend PHP_BINARY and keep the script
+	 * as its first argument.
+	 *
+	 * @param string $program Program name or path.
+	 * @return string|null
+	 */
+	private static function resolveExecutable( string $program ): ?string {
+		if ( ! Console::isWindows() ) {
+			return $program;
+		}
+
+		// An explicit path to an existing file needs no help.
+		if ( is_file( $program ) ) {
+			return $program;
+		}
+
+		foreach ( array( '.bat', '.cmd', '.exe', '.com' ) as $extension ) {
+			if ( is_file( $program . $extension ) ) {
+				return $program . $extension;
+			}
+		}
+
+		$resolved = self::locate( $program );
+
+		if ( null !== $resolved ) {
+			return $resolved;
+		}
+
+		// Nothing matched. Some tooling is a plain PHP script with no extension
+		// and no shebang - Laravel's artisan is the case in this repository -
+		// which proc_open cannot execute directly on Windows.
+		return ( str_ends_with( strtolower( $program ), '.php' ) || str_ends_with( strtolower( $program ), '/artisan' ) )
+			? null
+			: $program;
 	}
 
 	/**

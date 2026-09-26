@@ -16,10 +16,10 @@ use App\Notifications\LeadAutoReply;
 use App\Notifications\NewLeadNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
+use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
-use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /**
@@ -44,7 +44,7 @@ class LeadJobsTest extends TestCase
         $this->app->call([new SendLeadAdminNotification($lead->id), 'handle']);
 
         Notification::assertSentTo(
-            new \Illuminate\Notifications\AnonymousNotifiable,
+            new AnonymousNotifiable,
             NewLeadNotification::class,
             function (NewLeadNotification $notification, array $channels, object $notifiable) use ($lead): bool {
                 return $notification->lead->is($lead)
@@ -267,7 +267,7 @@ class LeadJobsTest extends TestCase
         $this->app->call([new SyncLeadStatusToWordPress($lead->id, Lead::STATUS_CONTACTED), 'handle']);
 
         Http::assertSent(function (Request $r): bool {
-            return 'PATCH' === $r->method()
+            return $r->method() === 'PATCH'
                 && str_ends_with($r->url(), '/safari-api/v1/leads/42')
                 && ['status' => Lead::STATUS_CONTACTED] === $r->data();
         });

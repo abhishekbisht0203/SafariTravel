@@ -32,7 +32,7 @@ class SendLeadAutoReply implements ShouldQueue
     {
         $lead = Lead::find($this->leadId);
 
-        if (null === $lead || $lead->isClosed()) {
+        if ($lead === null || $lead->isClosed()) {
             return;
         }
 

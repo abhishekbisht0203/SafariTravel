@@ -40,7 +40,7 @@ class SyncLeadToWordPress implements ShouldQueue
 
         $lead = Lead::find($this->leadId);
 
-        if (null === $lead || null !== $lead->wordpress_lead_id) {
+        if ($lead === null || $lead->wordpress_lead_id !== null) {
             return;
         }
 

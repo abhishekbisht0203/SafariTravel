@@ -39,7 +39,7 @@ class LeadIntakeService
      * Persist a validated submission.
      *
      * @param  array<string, mixed>  $data  Already-validated, cast payload.
-     * @param  array<string, mixed>  $raw   Raw request, used for spam signals.
+     * @param  array<string, mixed>  $raw  Raw request, used for spam signals.
      * @param  string|null  $remoteIp  Visitor address, if not the current request.
      * @return array{lead: Lead, spam: bool, reasons: list<string>}
      *
@@ -62,7 +62,7 @@ class LeadIntakeService
 
         $turnstileToken = (string) ($raw['cf_turnstile_token'] ?? $raw['cf-turnstile-response'] ?? '');
 
-        if ([] === $reasons && ! $this->turnstile->passes($turnstileToken, $remoteIp)) {
+        if ($reasons === [] && ! $this->turnstile->passes($turnstileToken, $remoteIp)) {
             $reasons[] = 'turnstile';
         }
 
@@ -70,7 +70,7 @@ class LeadIntakeService
             throw RateLimitExceeded::after($this->honeypot->availableIn($remoteIp));
         }
 
-        $spam = [] !== $reasons;
+        $spam = $reasons !== [];
 
         $lead = DB::transaction(function () use ($data, $spam, $remoteIp): Lead {
             $lead = new Lead($data);

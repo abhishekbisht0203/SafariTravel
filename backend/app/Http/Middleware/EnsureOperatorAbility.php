@@ -24,7 +24,7 @@ class EnsureOperatorAbility
     {
         $user = $request->user();
 
-        if (null === $user) {
+        if ($user === null) {
             return response()->json([
                 'message' => 'Unauthenticated.',
                 'data' => ['status' => Response::HTTP_UNAUTHORIZED],

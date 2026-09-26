@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Database\Factories\LeadFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * A lead (website inquiry) captured by the API.
@@ -45,12 +47,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $ip_hash
  * @property int|null $assigned_to
  * @property int|null $wordpress_lead_id
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class Lead extends Model
 {
-    /** @use HasFactory<\Database\Factories\LeadFactory> */
+    /** @use HasFactory<LeadFactory> */
     use HasFactory;
 
     public const STATUS_NEW = 'new';
@@ -170,7 +172,7 @@ class Lead extends Model
      */
     public function scopeStatus(Builder $query, ?string $status): void
     {
-        if (null !== $status && '' !== $status) {
+        if ($status !== null && $status !== '') {
             $query->where('status', $status);
         }
     }
@@ -194,11 +196,11 @@ class Lead extends Model
     {
         $term = trim((string) $term);
 
-        if ('' === $term) {
+        if ($term === '') {
             return;
         }
 
-        $like = '%' . str_replace(['%', '_'], ['\%', '\_'], $term) . '%';
+        $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $term).'%';
 
         $query->where(function (Builder $inner) use ($like): void {
             $inner->where('name', 'like', $like)

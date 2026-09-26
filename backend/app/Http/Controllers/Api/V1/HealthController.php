@@ -10,6 +10,7 @@ use App\Services\WordPress\WordPressClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -59,7 +60,7 @@ class HealthController extends Controller
             return [
                 'ok' => false,
                 'driver' => $driver,
-                'error' => \Illuminate\Support\Str::limit($e->getMessage(), 200),
+                'error' => Str::limit($e->getMessage(), 200),
             ];
         }
 

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
-use App\Services\WordPress\ContentRepository;
 use App\Services\WordPress\WordPressClient;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;

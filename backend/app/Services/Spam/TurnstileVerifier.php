@@ -26,14 +26,14 @@ final class TurnstileVerifier
     {
         $secret = (string) config('safari.turnstile.secret_key', '');
 
-        if ('' === $secret) {
+        if ($secret === '') {
             // Turnstile is not configured — nothing to verify.
             return true;
         }
 
         $token = trim($token);
 
-        if ('' === $token) {
+        if ($token === '') {
             return false;
         }
 
@@ -75,11 +75,11 @@ final class TurnstileVerifier
     {
         $key = trim((string) config('safari.turnstile.site_key', ''));
 
-        return '' !== $key ? $key : null;
+        return $key !== '' ? $key : null;
     }
 
     public function enabled(): bool
     {
-        return '' !== trim((string) config('safari.turnstile.secret_key', ''));
+        return trim((string) config('safari.turnstile.secret_key', '')) !== '';
     }
 }
