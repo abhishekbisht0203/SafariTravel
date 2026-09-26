@@ -118,12 +118,16 @@ class LeadJobsTest extends TestCase
 
         dispatch_sync(new SendLeadAutoReply($lead->id));
 
-        Notification::assertSentTo($lead, LeadAutoReply::class, function (LeadAutoReply $notification) use ($lead): bool {
-            $mail = $notification->toMail($lead);
+        Notification::assertSentOnDemand(
+            LeadAutoReply::class,
+            function (LeadAutoReply $notification, array $channels, object $notifiable) use ($lead): bool {
+                $mail = $notification->toMail($notifiable);
+                $body = implode("\n", array_column($mail->introLines, 'body'));
 
-            return str_contains($mail->introLines[0]['body'] ?? '', 'Amara')
-                || str_contains(implode(' ', array_column($mail->introLines, 'body')), 'Amara');
-        });
+                return str_contains($body, 'Amara Okafor')
+                    && $notifiable->routes['mail'] === $lead->email;
+            }
+        );
     }
 
     /*
