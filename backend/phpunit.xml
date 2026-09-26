@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         failOnWarning="true"
+         failOnRisky="true"
+>
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>app</directory>
+        </include>
+    </source>
+    <php>
+        <env name="APP_ENV" value="testing"/>
+        <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <env name="APP_KEY" value="base64:Z2hpNHZmYWx1ZXN0c2VjcmV0a2V5Zm9ydGVzdHM9IQ=="/>
+        <env name="APP_DEBUG" value="true"/>
+        <env name="BCRYPT_ROUNDS" value="4"/>
+        <env name="CACHE_STORE" value="array"/>
+        <!--
+            Tests never touch the Aiven database. An in-memory SQLite file with
+            no table prefix keeps the suite hermetic and fast; the MySQL
+            configuration is exercised by `php artisan migrate` against Aiven.
+        -->
+        <env name="DB_CONNECTION" value="sqlite"/>
+        <env name="DB_DATABASE" value=":memory:"/>
+        <env name="DB_TABLE_PREFIX" value=""/>
+        <env name="MAIL_MAILER" value="array"/>
+        <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="SESSION_DRIVER" value="array"/>
+        <env name="CACHE_STORE" value="array"/>
+        <env name="TELESCOPE_ENABLED" value="false"/>
+        <!-- Spam protection off by default; the tests that exercise it opt in. -->
+        <env name="LEAD_MIN_SUBMIT_SECONDS" value="0"/>
+        <env name="LEAD_RATE_LIMIT_MAX" value="0"/>
+        <env name="TURNSTILE_SITE_KEY" value=""/>
+        <env name="TURNSTILE_SECRET_KEY" value=""/>
+        <env name="SAFARI_API_KEY" value=""/>
+        <env name="SAFARI_API_MIRROR" value="false"/>
+        <env name="SAFARI_WP_URL" value=""/>
+    </php>
+</phpunit>

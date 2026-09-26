@@ -102,6 +102,107 @@ final class Config {
 	}
 
 	/**
+	 * Laravel backend root.
+	 *
+	 * The API is a separate application with its own composer.json, autoloader
+	 * and .env. It shares the repository's database, never its runtime.
+	 *
+	 * @return string
+	 */
+	public static function apiDir(): string {
+		return self::root() . '/backend';
+	}
+
+	/**
+	 * Laravel backend .env file path.
+	 *
+	 * @return string
+	 */
+	public static function apiEnvFile(): string {
+		return self::apiDir() . '/.env';
+	}
+
+	/**
+	 * HTTP port the API listens on locally.
+	 *
+	 * Defaults to 8000 — the Laravel convention — which is deliberately clear of
+	 * both WordPress (8080) and Vite (5173).
+	 *
+	 * @return int
+	 */
+	public static function apiPort(): int {
+		$port = Env::int( 'API_PORT', 8000 );
+
+		return ( $port > 0 && $port < 65536 ) ? $port : 8000;
+	}
+
+	/**
+	 * Base URL of the local API.
+	 *
+	 * @return string
+	 */
+	public static function apiUrl(): string {
+		return 'http://' . self::host() . ':' . self::apiPort();
+	}
+
+	/**
+	 * Table prefix used by the Laravel backend.
+	 *
+	 * Never the same value as the WordPress prefix. The two applications share
+	 * one database, and the prefix is the only thing keeping their tables apart.
+	 *
+	 * @return string
+	 */
+	public static function apiTablePrefix(): string {
+		$prefix = Env::str( 'API_TABLE_PREFIX', 'safari_api_' );
+		$prefix = preg_replace( '/[^A-Za-z0-9_]/', '', $prefix );
+
+		if ( ! is_string( $prefix ) || '' === $prefix ) {
+			$prefix = 'safari_api_';
+		}
+
+		// A prefix equal to (or a prefix of) the WordPress one would let a
+		// Laravel migration drop WordPress tables. Refuse rather than risk it.
+		$wp = self::tablePrefix();
+
+		if ( $prefix === $wp || 0 === strpos( $prefix, $wp ) || 0 === strpos( $wp, $prefix ) ) {
+			return 'safari_api_';
+		}
+
+		return $prefix;
+	}
+
+	/**
+	 * Shared secret authenticating WordPress -> API calls.
+	 *
+	 * @return string
+	 */
+	public static function apiKey(): string {
+		return Env::str( 'SAFARI_API_KEY', '' );
+	}
+
+	/**
+	 * Whether WordPress may delegate lead intake to the API.
+	 *
+	 * Off unless explicitly enabled, so a stock install behaves exactly as it
+	 * did before the backend existed.
+	 *
+	 * @return bool
+	 */
+	public static function apiDelegationEnabled(): bool {
+		return Env::bool( 'SAFARI_API_DELEGATE', false ) && '' !== self::apiKey();
+	}
+
+	/**
+	 * Whether the backend mirrors its leads back into the WordPress store.
+	 *
+	 * @return bool
+	 */
+	public static function apiMirrorEnabled(): bool {
+		return Env::bool( 'SAFARI_API_MIRROR', false );
+	}
+
+	/**
 	 * Link definitions, keyed by their path inside wp-content.
 	 *
 	 * @return array<string,string>

@@ -19,6 +19,10 @@
  *   php scripts/safari.php stop             Stop a background dev server
  *   php scripts/safari.php wp <args…>       Run repo-local WP-CLI
  *   php scripts/safari.php reset            Drop all WordPress data and reinstall
+ *   php scripts/safari.php api-install      Install the Laravel backend + migrate
+ *   php scripts/safari.php api-env [--force] Regenerate backend/.env from .env
+ *   php scripts/safari.php api-start        Start the Laravel dev server
+ *   php scripts/safari.php api <args…>      Run the Laravel artisan console
  *
  * @package Safari_Travel\Tooling
  */
@@ -42,6 +46,8 @@ require_once __DIR__ . '/lib/ContentLinker.php';
 require_once __DIR__ . '/lib/WpConfig.php';
 require_once __DIR__ . '/lib/WpCli.php';
 require_once __DIR__ . '/lib/Installer.php';
+require_once __DIR__ . '/lib/ApiEnv.php';
+require_once __DIR__ . '/lib/Artisan.php';
 
 Env::load( Config::envFile() );
 
@@ -141,6 +147,17 @@ final class Safari {
 				return $this->wp();
 			case 'reset':
 				return $this->reset();
+			case 'api-install':
+				return $this->apiInstall();
+			case 'api-env':
+				return $this->apiEnv();
+			case 'api-start':
+			case 'api-serve':
+				return $this->apiStart();
+			case 'api-status':
+				return $this->apiStatus();
+			case 'api':
+				return Artisan::run( $this->args );
 			case 'help':
 			case '--help':
 			case '-h':
@@ -332,6 +349,8 @@ final class Safari {
 
 		Console::step( 'Database' );
 		$dbOk = $this->dbCheck( true );
+
+		$this->doctorApi();
 
 		Console::write();
 		if ( 0 === $problems && $dbOk ) {
@@ -693,6 +712,287 @@ final class Safari {
 		Console::success( 'All WordPress tables dropped.' );
 
 		return $this->install();
+	}
+
+	/**
+	 * Report on the Laravel backend without ever failing the WordPress
+	 * diagnostics: the API is optional, and a missing backend must not stop
+	 * somebody working on the site.
+	 *
+	 * @return void
+	 */
+	private function doctorApi(): void {
+		Console::step( 'Laravel backend' );
+
+		$hasDir = is_dir( Config::apiDir() );
+		$this->line( 'backend/', $hasDir ? 'present' : 'not installed', $hasDir, true );
+
+		if ( ! $hasDir ) {
+			Console::write( '         Run: php scripts/safari.php api-install' );
+			return;
+		}
+
+		$hasEnv = is_file( Config::apiEnvFile() );
+		$this->line( 'backend/.env', $hasEnv ? 'present' : 'missing — run: php scripts/safari.php api-env', $hasEnv );
+
+		$hasVendor = Artisan::installed();
+		$this->line(
+			'backend/vendor',
+			$hasVendor ? 'installed' : 'missing — run: php scripts/safari.php api-install',
+			$hasVendor
+		);
+
+		$prefix = Config::apiTablePrefix();
+		$safe   = ( $prefix !== Config::tablePrefix() );
+		$this->line( 'Table prefix', $prefix . ' (WordPress: ' . Config::tablePrefix() . ')', $safe );
+		$this->line( 'API port', (string) Config::apiPort(), true );
+		$this->line( 'API base URL', Config::apiUrl(), true );
+		$this->line( 'Shared API key', '' !== Config::apiKey() ? 'set' : 'not set', true );
+		$this->line(
+			'Lead delegation',
+			Config::apiDelegationEnabled() ? 'WordPress -> API enabled' : 'disabled (WordPress handles leads itself)',
+			true
+		);
+		$this->line(
+			'Lead mirror',
+			Config::apiMirrorEnabled() ? 'API -> WordPress enabled' : 'disabled',
+			true
+		);
+
+		if ( ! $hasEnv || ! $hasVendor ) {
+			return;
+		}
+
+		$reach = $this->probeApi();
+
+		$this->line(
+			'API health',
+			$reach['running'] ? 'HTTP ' . $reach['status'] . ' at ' . $reach['url'] : 'not running (start: php scripts/safari.php api-start)',
+			true
+		);
+	}
+
+	/**
+	 * Probe the local API without requiring curl or any extra extension.
+	 *
+	 * @return array{running: bool, status: int, url: string}
+	 */
+	private function probeApi(): array {
+		$url = Config::apiUrl() . '/api/v1/health';
+
+		$context = stream_context_create(
+			array(
+				'http' => array(
+					'method'        => 'GET',
+					'timeout'       => 2,
+					'ignore_errors' => true,
+				),
+			)
+		);
+
+		$body = @file_get_contents( $url, false, $context );
+
+		if ( false === $body ) {
+			return array(
+				'running' => false,
+				'status'  => 0,
+				'url'     => $url,
+			);
+		}
+
+		$status = 0;
+
+		foreach ( (array) ( $http_response_header ?? array() ) as $header ) {
+			if ( preg_match( '#^HTTP/\S+\s+(\d{3})#', (string) $header, $m ) ) {
+				$status = (int) $m[1];
+			}
+		}
+
+		return array(
+			'running' => $status > 0,
+			'status'  => $status,
+			'url'     => $url,
+		);
+	}
+
+	/* ---------------------------------------------------------------------
+	 * Laravel backend (api-*)
+	 * ------------------------------------------------------------------ */
+
+	/**
+	 * Install the backend: generate its .env, install its Composer
+	 * dependencies, and run its migrations.
+	 *
+	 * Safe to re-run. The backend owns `safari_api_*` tables only, so this can
+	 * never disturb WordPress data.
+	 *
+	 * @return int
+	 */
+	private function apiInstall(): int {
+		$this->assertEnv();
+
+		if ( ! is_dir( Config::apiDir() ) ) {
+			Console::error( 'backend/ not found. The Laravel API is not part of this checkout.' );
+			return 1;
+		}
+
+		Console::banner( array( 'Safari Travel — Laravel backend', '' ) );
+
+		Console::step( '1/4  backend/.env' );
+		$this->apiEnv( false );
+
+		Console::step( '2/4  Composer dependencies' );
+		$code = Process::run(
+			array( 'composer', 'install', '--no-interaction', '--no-progress', '--working-dir=' . Config::apiDir() ),
+			array(),
+			true,
+			Config::apiDir()
+		);
+
+		if ( 0 !== $code ) {
+			Console::error( 'composer install failed inside backend/.' );
+			return 1;
+		}
+
+		Console::step( '3/4  Cache and compiled config' );
+		Artisan::run( array( 'config:clear' ) );
+		Artisan::run( array( 'route:clear' ) );
+
+		Console::step( '4/4  Migrations' );
+		$code = Artisan::run( array( 'migrate', '--force' ) );
+
+		if ( 0 !== $code ) {
+			Console::error( 'Migrations failed. Check DB_* in backend/.env and that the prefix differs from ' . Config::tablePrefix() );
+			return 1;
+		}
+
+		Console::banner(
+			array(
+				'Backend ready.',
+				'',
+				'API        : ' . Config::apiUrl() . '/api/v1/health',
+				'Database   : ' . (string) Env::get( 'DB_NAME', '?' ) . ' (prefix ' . Config::apiTablePrefix() . ')',
+				'WordPress  : ' . Config::siteUrl(),
+				'Operator   : php scripts/safari.php api safari:operator you@example.com --role=admin',
+				'',
+				'Start it   : php scripts/safari.php api-start',
+			)
+		);
+
+		return 0;
+	}
+
+	/**
+	 * Regenerate backend/.env from the repository .env.
+	 *
+	 * @param bool $quiet Suppress the per-step chatter when called internally.
+	 * @return int
+	 */
+	private function apiEnv( bool $quiet = false ): int {
+		if ( ! is_dir( Config::apiDir() ) ) {
+			Console::error( 'backend/ not found.' );
+			return 1;
+		}
+
+		try {
+			$result = ApiEnv::sync( isset( $this->flags['force'] ) );
+			$key    = ApiEnv::syncApiKey();
+		} catch ( Throwable $e ) {
+			Console::error( $e->getMessage() );
+			return 1;
+		}
+
+		if ( $quiet ) {
+			return 0;
+		}
+
+		Console::success( 'Wrote ' . $result['path'] );
+
+		if ( $result['changed'] ) {
+			Console::write( '  updated: ' . implode( ', ', $result['changed'] ) );
+		} else {
+			Console::skip( 'Already up to date (pass --force to rewrite every managed value)' );
+		}
+
+		// Existence only — the value is a shared secret and is never printed.
+		Console::write( '  SAFARI_API_KEY : ' . ( '' !== $key ? 'set in both .env files' : 'not set' ) );
+		Console::write( '  table prefix   : ' . Config::apiTablePrefix() . ' (WordPress uses ' . Config::tablePrefix() . ')' );
+
+		return 0;
+	}
+
+	/**
+	 * Start the Laravel development server.
+	 *
+	 * @return int
+	 */
+	private function apiStart(): int {
+		$port = $this->flagInt( 'port', Config::apiPort() );
+		$doc  = Config::apiDir() . '/public';
+
+		if ( ! is_file( Config::apiDir() . '/artisan' ) ) {
+			Console::error( 'backend/ is not installed. Run: php scripts/safari.php api-install' );
+			return 1;
+		}
+
+		if ( ! is_file( Config::apiEnvFile() ) ) {
+			Console::error( 'backend/.env is missing. Run: php scripts/safari.php api-env' );
+			return 1;
+		}
+
+		if ( $this->portInUse( '127.0.0.1', $port ) ) {
+			Console::error( sprintf( 'Port %d is already in use. Stop the other process or pass --port=<other>.', $port ) );
+			return 1;
+		}
+
+		Console::banner(
+			array(
+				'Safari Travel — Laravel API',
+				'',
+				'Health  : ' . Config::apiUrl() . '/api/v1/health',
+				'Intake  : POST ' . Config::apiUrl() . '/api/v1/leads',
+				'Content : GET  ' . Config::apiUrl() . '/api/v1/content/destination',
+				'',
+				'WordPress stays on ' . Config::siteUrl() . ' and is untouched by this server.',
+				'Development only. Press Ctrl+C to stop.',
+			)
+		);
+
+		$code = Process::run(
+			array(
+				self::phpBinary(),
+				'-d',
+				'memory_limit=512M',
+				'-S',
+				'127.0.0.1:' . $port,
+				'-t',
+				$doc,
+			),
+			array(),
+			true,
+			Config::apiDir()
+		);
+
+		Console::write();
+		Console::skip( 'API server stopped.' );
+
+		return 0 === $code ? 0 : $code;
+	}
+
+	/**
+	 * One-line readiness summary for the API.
+	 *
+	 * @return int
+	 */
+	private function apiStatus(): int {
+		if ( ! is_file( Config::apiEnvFile() ) ) {
+			Console::error( 'backend/.env is missing. Run: php scripts/safari.php api-env' );
+			return 1;
+		}
+
+		$code = Artisan::run( array( 'about', '--only=environment,cache,drivers' ) );
+
+		return $code;
 	}
 
 	/* ---------------------------------------------------------------------
@@ -1145,6 +1445,15 @@ Safari Travel local development CLI
   php scripts/safari.php stop              Stop a recorded background server
   php scripts/safari.php wp <args...>      Run the repository-local WP-CLI
   php scripts/safari.php reset --yes       Drop all WordPress tables, then reinstall
+
+Laravel backend (backend/)
+
+  php scripts/safari.php api-install       Install the API + run its migrations
+  php scripts/safari.php api-env [--force] Regenerate backend/.env from .env
+  php scripts/safari.php api-start         Start the Laravel dev server on :8000
+  php scripts/safari.php api-status        Show the backend's environment/drivers
+  php scripts/safari.php api <args...>     Run the Laravel artisan console
+                                           e.g. ... api safari:operator me@x --role=admin
 
 TXT );
 	}

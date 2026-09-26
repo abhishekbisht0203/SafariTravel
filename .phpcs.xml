@@ -30,7 +30,7 @@
     <!-- Minimum WP version for deprecated function checks -->
     <rule ref="WordPress.WP.DeprecatedFunctions">
         <properties>
-            <property name="minimum_supported_version" value="6.4"/>
+            <property name="minimum_wp_version" value="6.4"/>
         </properties>
     </rule>
 
@@ -40,7 +40,12 @@
     <!-- Text domains -->
     <rule ref="WordPress.WP.I18n">
         <properties>
-            <property name="text_domain" type="array" value="safari-core,safari-leads,safari-search,safari-travel"/>
+            <property name="text_domain" type="array">
+                <element value="safari-core"/>
+                <element value="safari-leads"/>
+                <element value="safari-search"/>
+                <element value="safari-travel"/>
+            </property>
         </properties>
     </rule>
 

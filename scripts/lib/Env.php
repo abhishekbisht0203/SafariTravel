@@ -223,8 +223,8 @@ if ( ! defined( 'SAFARI_TOOLING_ENV_LOADED' ) ) {
 		/**
 		 * Read a value as an integer.
 		 *
-		 * @param string $key     Variable name.
-		 * @param int    $default Fallback when unset or not numeric.
+		 * @param  string $key     Variable name.
+		 * @param  int    $default Fallback when unset or not numeric.
 		 * @return int
 		 */
 		public static function int( string $key, int $default = 0 ): int {
@@ -235,6 +235,97 @@ if ( ! defined( 'SAFARI_TOOLING_ENV_LOADED' ) ) {
 			}
 
 			return (int) $value;
+		}
+
+		/**
+		 * Set (or replace) keys in a .env file without disturbing the rest.
+		 *
+		 * Comments, blank lines and ordering are preserved, so a file a human
+		 * curated stays curated. A key that is not present yet is appended.
+		 *
+		 * @param string               $file Absolute path to the .env file.
+		 * @param array<string,string> $pairs Key => value.
+		 * @return string[] Keys that were actually written.
+		 */
+		public static function setInFile( string $file, array $pairs ): array {
+			if ( ! is_file( $file ) ) {
+				return array();
+			}
+
+			$lines   = file( $file, FILE_IGNORE_NEW_LINES );
+			$written = array();
+
+			if ( false === $lines ) {
+				return array();
+			}
+
+			foreach ( array_keys( $pairs ) as $key ) {
+				$quoted = self::quoteForFile( (string) $pairs[ $key ] );
+				$found  = false;
+
+				foreach ( $lines as $index => $line ) {
+					$trimmed = ltrim( $line );
+
+					if ( '' === $trimmed || '#' === $trimmed[0] || ';' === $trimmed[0] ) {
+						continue;
+					}
+
+					$eq = strpos( $trimmed, '=' );
+
+					if ( false === $eq || trim( substr( $trimmed, 0, $eq ) ) !== $key ) {
+						continue;
+					}
+
+					$lines[ $index ] = $key . '=' . $quoted;
+					$written[]       = $key;
+					$found           = true;
+					break;
+				}
+
+				if ( ! $found ) {
+					$lines[]    = $key . '=' . $quoted;
+					$written[]  = $key;
+				}
+			}
+
+			file_put_contents( $file, implode( "\n", $lines ) . "\n" );
+
+			return $written;
+		}
+
+		/**
+		 * Append keys to a .env file, adding a comment marker for the caller.
+		 *
+		 * @param string               $file  Absolute path to the .env file.
+		 * @param array<string,string> $pairs Key => value.
+		 * @return string[] Keys that were written.
+		 */
+		public static function appendToFile( string $file, array $pairs ): array {
+			$existing = self::parse( $file );
+			$missing  = array();
+
+			foreach ( $pairs as $key => $value ) {
+				if ( ! array_key_exists( $key, $existing ) ) {
+					$missing[ $key ] = (string) $value;
+				}
+			}
+
+			return [] === $missing ? array() : self::setInFile( $file, $missing );
+		}
+
+		/**
+		 * Quote a value for writing back to a .env file.
+		 */
+		private static function quoteForFile( string $value ): string {
+			if ( '' === $value ) {
+				return '';
+			}
+
+			if ( preg_match( '/\s|#|"\'/', $value ) ) {
+				return '"' . str_replace( '"', '\"', $value ) . '"';
+			}
+
+			return $value;
 		}
 	}
 }
