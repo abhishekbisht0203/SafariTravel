@@ -405,6 +405,10 @@ final class ImageManifest {
 				'height' => 1000,
 				'aspect' => 'wide',
 				'purpose' => 'Visa and travel documentation guide',
+				// Regional maps are near-square, so the aspect filter has to be
+				// relaxed here or every candidate is discarded before relevance
+				// is ever considered.
+				'aspect' => 'any',
 				// A map is the honest illustration for a visa guide: the answer
 				// to "what do I actually need" is always "which countries, and
 				// in what order". Historical passports and visa-desk

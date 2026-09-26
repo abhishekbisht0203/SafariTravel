@@ -1,15 +1,16 @@
 {
     "note": "Photography licences for the Safari Travel theme. Every file is stored locally and served from this site; nothing is hotlinked. Regenerate with: php scripts/safari.php images --force",
-    "generated": "2026-09-26T13:40:08+00:00",
+    "generated": "2026-09-26T13:42:54+00:00",
     "images": [
         {
             "id": "auth-signup",
             "file": "assets/images/auth/auth-signup.jpg",
-            "title": "Bush Elephant Amboseli (7234313436)",
-            "creator": "Benh LIEU SONG from Torcy, France / Benh LIEU SONG",
+            "title": "Elephants Amboseli Park",
+            "creator": "Lafleursauvage",
             "license": "BY-SA",
-            "license_url": "https://creativecommons.org/licenses/by-sa/2.0/",
-            "source": "https://commons.wikimedia.org/w/index.php?curid=29639568",
+            "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "source": "https://upload.wikimedia.org/wikipedia/commons/a/a6/Elephants_Amboseli_Park.jpg",
+            "page": "https://commons.wikimedia.org/w/index.php?curid=56281153",
             "used_for": "Signup page artwork"
         },
         {
@@ -19,7 +20,8 @@
             "creator": "Isiwal",
             "license": "BY-SA",
             "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
-            "source": "https://commons.wikimedia.org/w/index.php?curid=39649394",
+            "source": "https://upload.wikimedia.org/wikipedia/commons/2/22/Binocular_Eschenbach_Derby_Compact_8x40_Ww.jpg",
+            "page": "https://commons.wikimedia.org/w/index.php?curid=39649394",
             "used_for": "What to pack guide"
         },
         {
@@ -29,8 +31,20 @@
             "creator": "Benh LIEU SONG from Torcy, France / Benh LIEU SONG",
             "license": "BY-SA",
             "license_url": "https://creativecommons.org/licenses/by-sa/2.0/",
-            "source": "https://commons.wikimedia.org/w/index.php?curid=29639568",
+            "source": "https://upload.wikimedia.org/wikipedia/commons/d/da/Bush_Elephant_Amboseli_%287234313436%29.jpg",
+            "page": "https://commons.wikimedia.org/w/index.php?curid=29639568",
             "used_for": "Wildlife photography guide"
+        },
+        {
+            "id": "guide-visas",
+            "file": "assets/images/guides/guide-visas.jpg",
+            "title": "East Africa regions map",
+            "creator": "Peter Fitzgerald, amendments by Burmesedays",
+            "license": "BY-SA",
+            "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+            "source": "https://upload.wikimedia.org/wikipedia/commons/3/3f/East_Africa_regions_map.png",
+            "page": "https://commons.wikimedia.org/w/index.php?curid=22744955",
+            "used_for": "Visa and travel documentation guide"
         },
         {
             "id": "tour-balloon-safari",
@@ -39,7 +53,8 @@
             "creator": "Daniel Case",
             "license": "BY-SA",
             "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
-            "source": "https://commons.wikimedia.org/w/index.php?curid=182064020",
+            "source": "https://upload.wikimedia.org/wikipedia/commons/3/37/Balloons_over_Maasai_Mara%2C_Kenya%2C_looking_south_toward_Serengeti.jpg",
+            "page": "https://commons.wikimedia.org/w/index.php?curid=182064020",
             "used_for": "Balloon safari itinerary"
         },
         {
@@ -49,7 +64,8 @@
             "creator": "Rasheedhrasheed",
             "license": "BY-SA",
             "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
-            "source": "https://commons.wikimedia.org/w/index.php?curid=196208086",
+            "source": "https://upload.wikimedia.org/wikipedia/commons/8/85/Herd_of_Plains_Zebras_in_a_Caldera_Landscape.jpg",
+            "page": "https://commons.wikimedia.org/w/index.php?curid=196208086",
             "used_for": "Zebra itinerary"
         }
     ]

@@ -28,6 +28,7 @@ require SAFARI_CORE_DIR . 'inc/taxonomies.php';
 require SAFARI_CORE_DIR . 'inc/roles.php';
 require SAFARI_CORE_DIR . 'inc/install.php';
 require SAFARI_CORE_DIR . 'inc/site-settings.php';
+require SAFARI_CORE_DIR . 'inc/class-safari-images.php';
 
 add_filter('acf/settings/load_json', function (array $paths): array {
 	$paths[] = SAFARI_CORE_DIR . 'acf-json';
