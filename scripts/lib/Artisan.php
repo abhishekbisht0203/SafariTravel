@@ -24,6 +24,26 @@ if ( ! defined( 'SAFARI_TOOLING_ARTISAN_LOADED' ) ) {
 	final class Artisan {
 
 		/**
+		 * Build the command that runs an artisan subcommand.
+		 *
+		 * `artisan` has no extension and no usable shebang, so it cannot be
+		 * handed to proc_open() as the program directly - least of all on
+		 * Windows. It is always run through the current PHP binary, which also
+		 * guarantees the subprocess uses the same interpreter and php.ini as the
+		 * tooling that launched it.
+		 *
+		 * @param string[] $args Arguments after `artisan`.
+		 * @return string[]
+		 */
+		private static function command( array $args ): array {
+			return array_merge(
+				array( PHP_BINARY, Config::apiDir() . '/artisan' ),
+				$args,
+				array( '--no-interaction' )
+			);
+		}
+
+		/**
 		 * Run an artisan command.
 		 *
 		 * @param string[] $args Arguments after `artisan`.
@@ -42,13 +62,7 @@ if ( ! defined( 'SAFARI_TOOLING_ARTISAN_LOADED' ) ) {
 				return 1;
 			}
 
-			$command = array_merge(
-				array( Config::apiDir() . '/artisan' ),
-				$args,
-				array( '--no-interaction' )
-			);
-
-			return Process::run( $command, array(), true, Config::apiDir() );
+			return Process::run( self::command( $args ), array(), true, Config::apiDir() );
 		}
 
 		/**
@@ -66,13 +80,7 @@ if ( ! defined( 'SAFARI_TOOLING_ARTISAN_LOADED' ) ) {
 				);
 			}
 
-			$command = array_merge(
-				array( Config::apiDir() . '/artisan' ),
-				$args,
-				array( '--no-interaction' )
-			);
-
-			return Process::capture( $command, array(), Config::apiDir() );
+			return Process::capture( self::command( $args ), array(), Config::apiDir() );
 		}
 
 		/**

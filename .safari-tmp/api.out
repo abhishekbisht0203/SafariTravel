@@ -1,0 +1,12 @@
+
+=========================================================================
+  Safari Travel — Laravel API
+  
+  Health  : http://localhost:8000/api/v1/health
+  Intake  : POST http://localhost:8000/api/v1/leads
+  Content : GET  http://localhost:8000/api/v1/content/destination
+  
+  WordPress stays on http://localhost:8080 and is untouched by this server.
+  Development only. Press Ctrl+C to stop.
+=========================================================================
+

@@ -283,9 +283,41 @@ final class EnvTest extends PhpUnitTestCase {
 
 	/**
 	 * Write a temporary .env file and return its path.
+	 *
+	 * The system temp directory is tried first and a directory beside the
+	 * project second, for the same reason Process::tempFile() does it: a
+	 * congested temp directory makes tempnam() return false without raising
+	 * anything, which would otherwise surface as an unrelated error in whichever
+	 * test happened to touch a file.
 	 */
 	private function writeEnv( string $contents ): string {
-		$path = tempnam( sys_get_temp_dir(), 'safari_env_' );
+		$directory = dirname( __DIR__, 2 ) . '/.safari-tmp';
+
+		if ( ! is_dir( $directory ) ) {
+			mkdir( $directory, 0o777, true );
+		}
+
+		$path = false;
+
+		// A directory can be writable and still refuse to create a file - a
+		// congested system temp directory is exactly that state - so each
+		// candidate has to be tried until one of them actually produces a file.
+		foreach ( array( $directory, sys_get_temp_dir() ) as $candidate ) {
+			if ( ! is_dir( $candidate ) || ! is_writable( $candidate ) ) {
+				continue;
+			}
+
+			$path = tempnam( $candidate, 'safari_env_' );
+
+			if ( is_string( $path ) && '' !== $path ) {
+				$directory = $candidate;
+				break;
+			}
+
+			$path = false;
+		}
+
+		$this->assertIsString( $path, 'Could not create a temporary .env file in ' . $directory );
 
 		file_put_contents( (string) $path, $contents );
 
