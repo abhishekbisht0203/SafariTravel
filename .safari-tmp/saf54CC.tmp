@@ -11,3 +11,6 @@
 [Sat Sep 26 15:23:02 2026] 127.0.0.1:49800 Accepted
 [Sat Sep 26 15:23:02 2026] 127.0.0.1:49800 [200]: GET /favicon.ico
 [Sat Sep 26 15:23:02 2026] 127.0.0.1:49800 Closing
+[Sat Sep 26 15:50:33 2026] 127.0.0.1:54080 Accepted
+[Sat Sep 26 15:50:33 2026] 127.0.0.1:54080 Closed without sending a request; it was probably just an unused speculative preconnection
+[Sat Sep 26 15:50:33 2026] 127.0.0.1:54080 Closing

@@ -15,6 +15,7 @@
  *   php scripts/safari.php db-check         Test the Aiven connection
  *   php scripts/safari.php install          First-run WordPress install + activation
  *   php scripts/safari.php seed [--force]   Seed demo content
+ *   php scripts/safari.php images [--force] Download licensed photography into theme/assets/images/
  *   php scripts/safari.php start [--port=N] Start the PHP dev server
  *   php scripts/safari.php stop             Stop a background dev server
  *   php scripts/safari.php wp <args…>       Run repo-local WP-CLI
@@ -48,6 +49,7 @@ require_once __DIR__ . '/lib/WpCli.php';
 require_once __DIR__ . '/lib/Installer.php';
 require_once __DIR__ . '/lib/ApiEnv.php';
 require_once __DIR__ . '/lib/Artisan.php';
+require_once __DIR__ . '/lib/ImageLibrary.php';
 
 Env::load( Config::envFile() );
 
@@ -138,6 +140,8 @@ final class Safari {
 				return $this->install();
 			case 'seed':
 				return $this->seed();
+			case 'images':
+				return $this->images();
 			case 'start':
 			case 'serve':
 				return $this->start();
@@ -543,6 +547,38 @@ final class Safari {
 		}
 
 		return $code;
+	}
+
+	/**
+	 * Download the theme's photography from openly licensed sources.
+	 *
+	 * Stores every file under theme/assets/images/ and writes
+	 * CREDITS.json / CREDITS.md next to it. Safe to re-run: files that already
+	 * exist are skipped unless --force is passed.
+	 *
+	 * @return int
+	 */
+	private function images(): int {
+		Console::banner( array( 'Safari Travel — image library', '' ) );
+
+		$options = array(
+			'force'  => isset( $this->flags['force'] ),
+			'dry_run'=> isset( $this->flags['dry-run'] ),
+		);
+
+		if ( isset( $this->flags['only'] ) && is_string( $this->flags['only'] ) ) {
+			$options['only'] = array_filter( array_map( 'trim', explode( ',', $this->flags['only'] ) ) );
+		}
+
+		$library = new ImageLibrary();
+
+		foreach ( $library->acquire( $options ) as $line ) {
+			Console::write( $line );
+		}
+
+		Console::success( 'Image library up to date in theme/assets/images/' );
+
+		return 0;
 	}
 
 	/**
